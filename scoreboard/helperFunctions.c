@@ -1,7 +1,8 @@
 #include "helperFunctions.h"
 
-//config
-cfg* createConfig() {
+//configggggggggggggggggggggggggggggggggggggggggggggggggggg
+//This is a new commit v2
+cfg* createConfigg() {
 	cfg* src = (cfg*)malloc(sizeof(cfg));
 	if (!src) {
 		return 0;
@@ -18,7 +19,7 @@ void freeConfig(cfg* cfg) {
 }
 
 cfg* parseConfig(FILE* cfgFd, char* line) {
-	cfg* cfg = createConfig();
+	cfg* cfg = createConfigg();
 	if (!cfg) {
 		return 0;
 	}
