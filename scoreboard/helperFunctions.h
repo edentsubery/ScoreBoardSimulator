@@ -2,7 +2,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include "structs.h"
 
-cfg* createConfigg();
+cfg* createConfig();
 
 void freeConfig(cfg* cfg);
 
