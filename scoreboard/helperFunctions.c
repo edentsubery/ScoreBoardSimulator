@@ -1,78 +1,78 @@
 #include "helperFunctions.h"
-
-cfg* createConfig() {
-	cfg* src = (cfg*)malloc(sizeof(cfg));
-	if (!src) {
+//
+Configuration* initConfiguration() {
+	Configuration* config = (Configuration*)malloc(sizeof(Configuration));
+	if (!config) {
 		return 0;
 	}
-	src->name = -1;
-	return src;
+	config->name = -1;
+	return config;
 }
-
-void freeConfig(cfg* cfg) {
+//
+void freeConfiguration(Configuration* cfg) {
 	if (!cfg) {
 		return;
 	}
 	free(cfg);
 }
-
-cfg* parseConfig(FILE* cfgFd, char* line) {
-	cfg* cfg = createConfig();
-	if (!cfg) {
+//
+Configuration* analyzeConfiguration(FILE* cfgFile, char* line) {
+	Configuration* config = initConfiguration();
+	if (!config) {
 		return 0;
 	}
-	size_t len = 0;
-	ssize_t readLines = 0;
 	int linesCounter = 0;
-
-	while (fgets(line, MAX_LINE_LENGTH, cfgFd) != 0) {
-		if (!parse(cfg, line)) {
+	size_t length = 0;
+	ssize_t linesRead = 0;
+	
+	while (fgets(line, MAX_LINE_LENGTH, cfgFile) != 0) {
+		if (!analyzeConfig(config, line)) {
 			return 0;
 		}
 	}
-	return cfg;
+	return config;
 }
-
-int parse(cfg* cfg, char* line) {
+//
+int analyzeConfig(Configuration* cfg, char* line) {
 	if (line == '\n') {
 		return 1;
 	}
-	char* delimeter = " =\n\t";
-	char* ptr = strtok(line, delimeter);
-	if (!ptr) {
+	char* boundary = " =\n\t";
+	char* pointer = strtok(line, boundary);
+	if (!pointer) {
 		return 1;
 	}
-	int param;
+	int par;
 	char unitTraceName[MAX_LENGTH];
-	for (int i = 0; i < NUM_OF_UNITS; i++) {
-		if (strcmp(ptr, configUnitsTypes[i]) == 0) {
-			if ((param = parseParam(ptr, i, delimeter)) == -1) {
+	for (int i = 0; i < UNITS_NUMBER; i++) {
+		if (strcmp(pointer, configUnitsTypes[i]) == 0) {
+			if ((par = analyzePar(pointer, i, boundary)) == -1) {
 				return 0;
 			}
-			cfg->units[i] = param;
+			cfg->units[i] = par;
 			return 1;
 		}
 	}
-	for (int i = 0; i < NUM_OF_UNITS; i++) {
-		if (strcmp(ptr, configUnitsTypes[i + NUM_OF_UNITS]) == 0) {
-			if ((param = parseParam(ptr, i, delimeter)) == -1) {
+	for (int i = 0; i < UNITS_NUMBER; i++) {
+		if (strcmp(pointer, configUnitsTypes[i + UNITS_NUMBER]) == 0) {
+			if ((par = analyzePar(pointer, i, boundary)) == -1) {
 				return 0;
 			}
-			cfg->delays[i] = param;
+			cfg->delays[i] = par;
 			return 1;
 		}
 	}
-	if (strcmp(ptr, configUnitsTypes[TRACE_UNIT]) == 0) {
-		if ((param = parseTraceUnitParam(ptr, TRACE_UNIT, delimeter, unitTraceName)) == -1) {
+	if (strcmp(pointer, configUnitsTypes[TRACE_UNIT]) == 0) {
+		if ((par = traceUnitAnalyze(pointer, TRACE_UNIT, boundary, unitTraceName)) == -1) {
 			return 0;
 		}
 		if (unitTraceName) {
-			char* del = "01234";
-			cfg->unitNum = extractDigitFromStr(unitTraceName);
-			char* ptr = strtok(unitTraceName, del);
-			int name = unitTraceNameToInt(unitTraceName);
+			char* bound = "01234";
+			cfg->unitNum = findIntegerInString(unitTraceName);
+			char* pointer = strtok(unitTraceName, bound);
+			int name = findUnitTraceName(unitTraceName);
 			if (name == -1) {
-				printf("Error! cfg trace_unit_name invalide.\n");
+				printf("conifguration trace_unit_name invalide!\n");
 				return 0;
 			}
 			cfg->name = name;
@@ -80,39 +80,39 @@ int parse(cfg* cfg, char* line) {
 	}
 	return 1;
 }
-
-int parseParam(char* ptr, int paramType, char* delimeter) {
-	ptr = strtok(NULL, delimeter);
-	int num = atoi(ptr);
+//
+int analyzePar(char* pointer, int parType, char* boundary) {
+	pointer = strtok(NULL, boundary);
+	int num = atoi(pointer);
 	return num;
 }
-
-int parseTraceUnitParam(char* ptr, int paramType, char* delimeter, char* unitTraceName) {
-	ptr = strtok(NULL, delimeter);
-	if (!ptr) {
-		printf("Couldnt parse traceunit name.\n");
+//
+int traceUnitAnalyze(char* pointer, int parType, char* boundary, char* unitTraceName) {
+	pointer = strtok(NULL, boundary);
+	if (!pointer) {
+		printf("Couldnt analyze traceunit name!\n");
 		return 0;
 	}
-	strcpy(unitTraceName, ptr);
+	strcpy(unitTraceName, pointer);
 	return 1;
 }
-
-int extractDigitFromStr(char* str) {
-	char* ptr = str;
-	while (*ptr) {
-		if (isdigit(*ptr)) {
-			int res = atoi(ptr);
-			return res;
+//
+int findIntegerInString(char* str) {
+	char* pointer = str;
+	while (*pointer) {
+		if (isdigit(*pointer)) {
+			int result = atoi(pointer);
+			return result;
 		}
 		else {
-			ptr++;
+			pointer++;
 		}
 	}
 	return -1;
 }
-
-int unitTraceNameToInt(char* str) {
-	for (int i = 0; i < NUM_OF_UNITS; i++) {
+//3
+int findUnitTraceName(char* str) {
+	for (int i = 0; i < UNITS_NUMBER; i++) {
 		if (strcmp(str, unitsTypeNames[i]) == 0) {
 			return i;
 		}
@@ -121,58 +121,59 @@ int unitTraceNameToInt(char* str) {
 }
 
 //inst
-
-Instruction* createInstruction() {
+//
+Instruction* initInstruction() {
 	Instruction* inst = malloc(sizeof(Instruction));
 	if (!inst) {
 		return NULL;
 	}
-	inst->isEmpty = Yes;
-	inst->writeToFile = No;
-	inst->canIssue = Yes;
-	for (int i = 0; i < NUM_OF_CYCLES_TYPES; i++) {
-		inst->stateCC[i] = -1;
+	inst->empty = Yes;
+	inst->fileWriting = No;
+	inst->issue = Yes;
+	for (int i = 0; i < NUM_OF_OPERATIONS_STAGES; i++) {
+		inst->clockCyclesOperation[i] = -1;
 	}
-	inst->instRes = inst->executionTime = inst->instType = inst->instIndex = inst->queueIndex = inst->status = -1;
-	inst->fetchedTime = 0;
+	inst->result = inst->executionCycles = inst->operation = inst->index = inst->queueIndex = inst->status = -1;
+	inst->fetchCycles = 0;
 	return inst;
 }
-
+//
 void freeInstruction(Instruction* inst) {
 	if (inst) {
 		free(inst);
 	}
 }
-void parseInstruction(Instruction* inst, int command) {
+//
+void analyzeInstruction(Instruction* inst, int command) {
 	inst->command = command;
 	inst->opcode = 0xF & ((command << 4) >> 28);
 	inst->dst = 0xF & ((command << 8) >> 28);
 	inst->src0 = 0xF & ((command << 12) >> 28);
 	inst->src1 = 0xF & ((command << 16) >> 28);
 	inst->imm = 0xF & ((command << 20) >> 20);
-	inst->isEmpty = No;
+	inst->empty = No;
 	if (inst->opcode != HALT) {
-		if (inst->opcode != LD) {
-			inst->instType = inst->opcode;
+		if (inst->opcode != OP_LD) {
+			inst->operation = inst->opcode;
 		}
 		else {
-			inst->instType = inst->opcode;
+			inst->operation = inst->opcode;
 		}
 	}
 	else {
-		inst->instType = -1;
+		inst->operation = -1;
 	}
 }
 
-
-InstructionQueue* initializeInstQueue() {
-	InstructionQueue* instQueue = malloc(sizeof(InstructionQueue));
+//
+InstQueue* initInstQueue() {
+	InstQueue* instQueue = malloc(sizeof(InstQueue));
 	if (!instQueue) {
 		printf("Error! Memory allocation failure.\n");
 		return NULL;
 	}
-	for (int i = 0; i < NUM_OF_INSTRUCTION_IN_QUEUE; i++) {
-		instQueue->queue[i] = createInstruction();
+	for (int i = 0; i < NUM_OF_INSTRUCTION_QUEUE; i++) {
+		instQueue->queue[i] = initInstruction();
 		if (!instQueue->queue[i]) {
 			printf("Error! Memory allocation failure.\n");
 			for (int j = i; j >= 0; j--) {
@@ -182,256 +183,255 @@ InstructionQueue* initializeInstQueue() {
 			return NULL;
 		}
 	}
-	instQueue->isQueueFull = No;
-	instQueue->isQueueEmpty = Yes;
+	instQueue->fullQueue = No;
+	instQueue->emptyQueue = Yes;
 	return instQueue;
 }
-
-void freeInstructionQueue(InstructionQueue* instQueue) {
+//
+void freeInstQueue(InstQueue* instQueue) {
 	if (instQueue) {
-		for (int i = 0; i < NUM_OF_INSTRUCTION_IN_QUEUE; i++) {
+		for (int i = 0; i < NUM_OF_INSTRUCTION_QUEUE; i++) {
 			freeInstruction(instQueue->queue[i]);
 		}
 		free(instQueue);
 	}
 }
-
-int addInstructionToInstructionQueue(InstructionQueue* queue, Instruction* inst) {
-	if (inst->instType == -1) {
+//
+int enqueueInstQueue(InstQueue* instQueue, Instruction* inst) {
+	if (inst->operation == -1) {
 		return -1;
 	}
-	if (queue->isQueueFull) {
+	if (instQueue->fullQueue) {
 		return -1;
 	}
-	for (int i = 0; i < NUM_OF_INSTRUCTION_IN_QUEUE; i++) {
-		if (queue->queue[i]->isEmpty) {
-			queue->queue[i] = inst;
-			setQueueProperties(queue);
+	for (int i = 0; i < NUM_OF_INSTRUCTION_QUEUE; i++) {
+		if (instQueue->queue[i]->empty) {
+			instQueue->queue[i] = inst;
+			emptyFullInstQueue(instQueue);
 			return i;
 		}
 	}
 	return -1;
 }
-int removeInstructionFromInstructionQueue(InstructionQueue* queue, int instIdx) {
-	if (queue->isQueueEmpty) {
+//
+int dequeueInstQueue(InstQueue* instQueue, int instIndex) {
+	if (instQueue->emptyQueue) {
 		return 0;
 	}
-	queue->queue[instIdx] = createInstruction();
-	setQueueProperties(queue);
+	instQueue->queue[instIndex] = initInstruction();
+	emptyFullInstQueue(instQueue);
 	return 1;
 }
-
-void setQueueProperties(InstructionQueue* queue) {
-	int numOfInstructions = 0;
-	for (int i = 0; i < NUM_OF_INSTRUCTION_IN_QUEUE; i++) {
-		if (queue->queue[i]->isEmpty != Yes) {
-			numOfInstructions++;
+//
+void emptyFullInstQueue(InstQueue* instQueue) {
+	int instNum = 0;
+	for (int i = 0; i < NUM_OF_INSTRUCTION_QUEUE; i++) {
+		if (instQueue->queue[i]->empty != Yes) {
+			instNum++;
 		}
 	}
-	if (numOfInstructions == NUM_OF_INSTRUCTION_IN_QUEUE) {
-		queue->isQueueFull = Yes;
-		queue->isQueueEmpty = No;
+	if (instNum == NUM_OF_INSTRUCTION_QUEUE) {
+		instQueue->fullQueue = Yes;
+		instQueue->emptyQueue = No;
 	}
-	else if (numOfInstructions == 0) {
-		queue->isQueueEmpty = Yes;
-		queue->isQueueFull = No;
+	else if (instNum == 0) {
+		instQueue->emptyQueue = Yes;
+		instQueue->fullQueue = No;
 	}
 	else {
-		queue->isQueueFull = No;
-		queue->isQueueEmpty = No;
+		instQueue->fullQueue = No;
+		instQueue->emptyQueue = No;
 	}
 }
 
 //units
 
-
-Unit* createUnit(unitType type, int num) {
-	Unit* src = (Unit*)malloc(sizeof(Unit));
-	if (!src) {
-		printf("Error! Memory allocation failure.\n");
+//
+Unit* initUnit(unitType type, int num) {
+	Unit* unit = (Unit*)malloc(sizeof(Unit));
+	if (!unit) {
+		printf("Error! Memory allocation failure!\n");
 		return 0;
 	}
-	src->type = type;
-	src->unitNum = num;
-	src->isEmpty = Yes;
-	src->canWriteResult = No;
-
-	src->busy = No;
-	src->op = src->Fi = src->Fj = src->Fk = src->QjType = src->QkType = src->QjIdx = src->QkIdx = src->Rj = src->Rk = -1;
-	return src;
+	unit->type = type;
+	unit->unitNum = num;
+	unit->empty = Yes;
+	unit->writeResult = No;
+	unit->busy = No;
+	unit->op = unit->f_i = unit->f_j = unit->f_k = unit->q_j_type = unit->q_k_type = unit->q_j_index = unit->q_k_index = unit->r_j = unit->r_k = -1;
+	return unit;
 }
-
-void freeUnit(Unit* src) {
-	if (!src) {
+//
+void freeUnit(Unit* unit) {
+	if (!unit) {
 		return;
 	}
-	free(src);
+	free(unit);
 }
-
-Units* createUnits(int numOfUnits, int delay, unitType type) {
-	Units* src = malloc(sizeof(Units));
-	if (src == NULL) {
-		printf("Error! Memory allocation failure.\n");
+//
+Units* initUnits(int numOfUnits, int delay, unitType type) {
+	Units* units = malloc(sizeof(Units));
+	if (units == NULL) {
+		printf("Error! Memory allocation failure!\n");
 		return NULL;
 	}
 
-	Unit** units = malloc(numOfUnits * sizeof(Unit*));
-	if (units == NULL) {
-		printf("Error! Memory allocation failure.\n");
+	Unit** unitsArray = malloc(numOfUnits * sizeof(Unit*));
+	if (unitsArray == NULL) {
+		printf("Error! Memory allocation failure!\n");
 		return NULL;
 	}
 
 	for (int i = 0; i < numOfUnits; i++) {
-		Unit* unit = createUnit(type, i);
-		src->units[i] = unit;
-		if (src->units[i] == NULL) {
-			printf("Error! Memory allocation failure.\n");
+		Unit* unit = initUnit(type, i);
+		units->units[i] = unit;
+		if (units->units[i] == NULL) {
+			printf("Error! Memory allocation failure!\n");
 			for (int j = i; j > -1; j--) {
-				freeUnit(src->units[j]);
+				freeUnit(units->units[j]);
 			}
 			return NULL;
 		}
 	}
-	src->numOfTotalUnits = numOfUnits;
-	src->numOfActiveUnits = 0;
-	src->delay = delay;
-	src->type = type;
-	src->canInsert = Yes;
-	return src;
+	units->totalUnitsNum = numOfUnits;
+	units->activeUnitsNum = 0;
+	units->delay = delay;
+	units->type = type;
+	units->canEnter = Yes;
+	return units;
 }
-void freeUnits(Units* src) {
-	if (src == NULL) {
+//
+void freeUnits(Units* units) {
+	if (units == NULL) {
 		return;
 	}
-	for (int i = 0; i < MAX_NUM_OF_FUNCTIONAL_UNITS; i++) {
-		if (src->numOfActiveUnits != 0) {
-			freeUnit(src->units[i]);
-			src->numOfActiveUnits--;
+	for (int i = 0; i < MAX_NUM_OF_ACTIVE_UNITS; i++) {
+		if (units->activeUnitsNum != 0) {
+			freeUnit(units->units[i]);
+			units->activeUnitsNum--;
 		}
 	}
-	free(src);
+	free(units);
 }
-
-FunctionalUnit* createFunctionalUnit(cfg* cfg) {
-	FunctionalUnit* src = (FunctionalUnit*)malloc(sizeof(FunctionalUnit));
-	if (!src) {
-		printf("Error! Memory allocation failure.\n");
+//
+ActiveUnit* initActiveUnit(Configuration* config) {
+	ActiveUnit* activeUnit = (ActiveUnit*)malloc(sizeof(ActiveUnit));
+	if (!activeUnit) {
+		printf("Error! Memory allocation failure!\n");
 		return 0;
 	}
-	for (int i = 0; i < NUM_OF_UNITS; i++) {
-		src->functionalUnit[i] = createUnits(cfg->units[i], cfg->delays[i], i);
-		if (!src->functionalUnit[i]) {
-			printf("Error! Memory allocation failure.\n");
+	for (int i = 0; i < UNITS_NUMBER; i++) {
+		activeUnit->activeUnit[i] = initUnits(config->units[i], config->delays[i], i);
+		if (!activeUnit->activeUnit[i]) {
+			printf("Error! Memory allocation failure!\n");
 			for (int j = i; j > -1; j--) {
-				freeUnits(src->functionalUnit[j]);
+				freeUnits(activeUnit->activeUnit[j]);
 			}
 			return 0;
 		}
 	}
-	src->unitNum = cfg->unitNum;
-	src->unitName = cfg->name;
-	return src;
+	activeUnit->unitNum = config->unitNum;
+	activeUnit->unitName = config->name;
+	return activeUnit;
 }
-
-void freeFunctionalUnit(FunctionalUnit* fus) {
-	if (fus == NULL) {
+//
+void freeActiveUnit(ActiveUnit* activeUnit) {
+	if (activeUnit == NULL) {
 		return;
 	}
-	for (int i = 0; i < NUM_OF_UNITS; i++) {
-		freeUnits(fus->functionalUnit[i]);
+	for (int i = 0; i < UNITS_NUMBER; i++) {
+		freeUnits(activeUnit->activeUnit[i]);
 	}
-	free(fus);
+	free(activeUnit);
 }
 
 //utilities
 
-
-int verifyFiles(FILE** filesFd, char** filesPaths) {
-	for (int i = 0; i < NUM_OF_FILES; i++) {
+//
+int openFiles(FILE** filesArray, char** filesPaths) {
+	for (int i = 0; i < FILES_NUMBER; i++) {
 		char* mode = "r";
 		if (i > 1) {
 			mode = "w";
 		}
-		FILE* fd = fopen(filesPaths[i], mode);
-		if (!fd) {
-			printf("Error! could'nt open %s.\n", filesPaths[i]);
+		FILE* file = fopen(filesPaths[i], mode);
+		if (!file) {
+			printf("Error! could'nt open %s!\n", filesPaths[i]);
 			for (int j = 0; j < i; j++) {
-				fclose(filesFd[j]);
+				fclose(filesArray[j]);
 			}
 			return 0;
 		}
-		filesFd[i] = fd;
+		filesArray[i] = file;
 	}
 	return 1;
 }
-
-void printMemoutFile(FILE* fd, int* memory, int maxLines) {
-	for (int i = 0; i < maxLines; i++) {
-		fprintf(fd, "%.8x\n", memory[i]);
+//
+void printMemoutFile(FILE* file, int* memory, int maxNumLines) {
+	for (int i = 0; i < maxNumLines; i++) {
+		fprintf(file, "%.8x\n", memory[i]);
 	}
 }
-
-void printRegoutFile(FILE* fd, double* regs) {
+//
+void printRegoutFile(FILE* file, double* regs) {
 	int i;
-	for (i = 0; i < NUM_OF_REGISTERS; i++) {
-		fprintf(fd, "%f\n", regs[i]);
+	for (i = 0; i < REGISTERS_NUMBER; i++) {
+		fprintf(file, "%f\n", regs[i]);
 	}
 }
-
-void printTraceunitFile(FILE* fd, FunctionalUnit* fus, int* resultTypes, int* resultIndexes, int cc) {
+//
+void printTraceunitFile(FILE* file, ActiveUnit* activeUnit, int* resultTypes, int* resultIndexes, int clockCycle) {
 	int unitBusy = No;
-	for (int i = 0; i < NUM_OF_REGISTERS; i++) {
-		if (resultTypes[i] == fus->unitName && resultIndexes[i] == fus->unitNum) {
+	for (int i = 0; i < REGISTERS_NUMBER; i++) {
+		if (resultTypes[i] == activeUnit->unitName && resultIndexes[i] == activeUnit->unitNum) {
 			unitBusy = Yes;
 		}
 	}
 	if (unitBusy) {
-		fprintf(fd, "%d ", cc);
-		fprintf(fd, "%s%d ", unitsTypeNames[fus->unitName], fus->unitNum);
+		fprintf(file, "%d ", clockCycle);
+		fprintf(file, "%s%d ", unitsTypeNames[activeUnit->unitName], activeUnit->unitNum);
 
-		fprintf(fd, "F%d ", fus->functionalUnit[fus->unitName]->units[fus->unitNum]->Fi);
-		fprintf(fd, "F%d ", fus->functionalUnit[fus->unitName]->units[fus->unitNum]->Fj);
-		fprintf(fd, "F%d ", fus->functionalUnit[fus->unitName]->units[fus->unitNum]->Fk);
+		fprintf(file, "F%d ", activeUnit->activeUnit[activeUnit->unitName]->units[activeUnit->unitNum]->f_i);
+		fprintf(file, "F%d ", activeUnit->activeUnit[activeUnit->unitName]->units[activeUnit->unitNum]->f_j);
+		fprintf(file, "F%d ", activeUnit->activeUnit[activeUnit->unitName]->units[activeUnit->unitNum]->f_k);
 
-		int q_j = (fus->functionalUnit[fus->unitName]->units[fus->unitNum]->QjType == -1) ? 0 : 1;
-		int q_k = (fus->functionalUnit[fus->unitName]->units[fus->unitNum]->QkType == -1) ? 0 : 1;
+		int q_j = (activeUnit->activeUnit[activeUnit->unitName]->units[activeUnit->unitNum]->q_j_type == -1) ? 0 : 1;
+		int q_k = (activeUnit->activeUnit[activeUnit->unitName]->units[activeUnit->unitNum]->q_k_type == -1) ? 0 : 1;
 
 		if (q_j) {
-			fprintf(fd, "%s%d ", unitsTypeNames[fus->functionalUnit[fus->unitName]->units[fus->unitNum]->QjType], fus->functionalUnit[fus->unitName]->units[fus->unitNum]->QjIdx);
+			fprintf(file, "%s%d ", unitsTypeNames[activeUnit->activeUnit[activeUnit->unitName]->units[activeUnit->unitNum]->q_j_type], activeUnit->activeUnit[activeUnit->unitName]->units[activeUnit->unitNum]->q_j_index);
 		}
 		else {
-			fprintf(fd, "- ");
+			fprintf(file, "- ");
 		}
 		if (q_k) {
-			fprintf(fd, "%s%d ", unitsTypeNames[fus->functionalUnit[fus->unitName]->units[fus->unitNum]->QkType], fus->functionalUnit[fus->unitName]->units[fus->unitNum]->QkIdx);
+			fprintf(file, "%s%d ", unitsTypeNames[activeUnit->activeUnit[activeUnit->unitName]->units[activeUnit->unitNum]->q_k_type], activeUnit->activeUnit[activeUnit->unitName]->units[activeUnit->unitNum]->q_k_index);
 		}
 		else {
-			fprintf(fd, "- ");
+			fprintf(file, "- ");
 		}
 
-		fprintf(fd, (fus->functionalUnit[fus->unitName]->units[fus->unitNum]->Rj) ? "Yes " : "No ");
-		fprintf(fd, (fus->functionalUnit[fus->unitName]->units[fus->unitNum]->Rk) ? "Yes\n" : "No\n");
+		fprintf(file, (activeUnit->activeUnit[activeUnit->unitName]->units[activeUnit->unitNum]->r_j) ? "Yes " : "No ");
+		fprintf(file, (activeUnit->activeUnit[activeUnit->unitName]->units[activeUnit->unitNum]->r_k) ? "Yes\n" : "No\n");
 	}
 }
-
-int cmdToHex(Instruction* instruction) {
+//
+int hexCommand(Instruction* inst) {
 	unsigned int hex = 0;
-	hex += instruction->opcode << 24;
-	hex += instruction->dst << 20;
-	hex += instruction->src0 << 16;
-	hex += instruction->src1 << 12;
-	hex += 0xFFFFF & instruction->imm;
+	hex += inst->opcode << 24;
+	hex += inst->dst << 20;
+	hex += inst->src0 << 16;
+	hex += inst->src1 << 12;
+	hex += 0xFFFFF & inst->imm;
 	return hex;
 }
-
-
-
-int areUnitsEqual(FunctionalUnit* fu, int q_type, int q_index, Unit* src2, int isJ) {
-	for (int i = 0; i < NUM_OF_UNITS; i++) {
+//
+int unitsCompare(ActiveUnit* activeUnit, int q_type, int q_index, Unit* unit, int j) {
+	for (int i = 0; i < UNITS_NUMBER; i++) {
 		if (i == q_type) {
-			for (int j = 0; j < fu->functionalUnit[i]->numOfTotalUnits; j++) {
+			for (int j = 0; j < activeUnit->activeUnit[i]->totalUnitsNum; j++) {
 				if (j == q_index) {
-					if (fu->functionalUnit[i]->units[j] == src2) {
+					if (activeUnit->activeUnit[i]->units[j] == unit) {
 						return 1;
 					}
 				}
@@ -440,14 +440,11 @@ int areUnitsEqual(FunctionalUnit* fu, int q_type, int q_index, Unit* src2, int i
 	}
 	return 0;
 }
-
-
-
-
+//
 float singlePrecisionToFloat(unsigned long singlePrecision) {
 	unsigned long sign, exp, fractionBits, fractionB;
 	int i = 0;
-	float res, fraction = 1.0;
+	float result, fraction = 1.0;
 	if (singlePrecision == 0) {
 		return 0.0;
 	}
@@ -459,15 +456,15 @@ float singlePrecisionToFloat(unsigned long singlePrecision) {
 		fractionB = fractionB >> 31;
 		fraction += fractionB * powf(2, -1 * (i + 1));
 	}
-	res = powf(-1, sign) * powf(2, exp - 127) * fraction;
+	result = powf(-1, sign) * powf(2, exp - 127) * fraction;
 
-	return res;
+	return result;
 }
-
+//
 int floatToSinglePrecision(float f) {
 	int exp, fraction, expLenBits, i = 0, fractionToBit = 0;
 	int floatInInt = (int)floor(f);
-	int res;
+	int result;
 
 	float rat = f - floatInInt;
 	int sign = f > 0.0 ? 0 : 1;
@@ -486,79 +483,80 @@ int floatToSinglePrecision(float f) {
 	fractionToBit >>= 1;
 	fraction = fraction | fractionToBit;
 	fraction = fraction & 0x7FFFFF;
-	res = (((sign << 8) + exp) << 23) + fraction;
+	result = (((sign << 8) + exp) << 23) + fraction;
 
-	return res;
+	return result;
 }
-void cleanAndWriteToFiles(FILE* fd, FunctionalUnit* fus, InstructionQueue* queue) {
-	for (int i = 0; i < NUM_OF_INSTRUCTION_IN_QUEUE; i++) {
-		if (!queue->queue[i]->isEmpty && queue->queue[i]->stateCC[WRITE_RESULT] > 0) {
-			int type = queue->queue[i]->instType, index = queue->queue[i]->instIndex;
-			insertFirst(fus->functionalUnit[type]->units[index]);
-			fus->functionalUnit[type]->units[index]->instruction->isEmpty = Yes;
-			fus->functionalUnit[type]->units[index] = createUnit(type, index);
-			fus->functionalUnit[type]->units[index]->isEmpty = Yes;
-			fus->functionalUnit[type]->numOfActiveUnits--;
+//
+void writeToFiles(FILE* file, ActiveUnit* activeUnit, InstQueue* instQueue) {
+	for (int i = 0; i < NUM_OF_INSTRUCTION_QUEUE; i++) {
+		if (!instQueue->queue[i]->empty && instQueue->queue[i]->clockCyclesOperation[WRITE_RESULT] > 0) {
+			int type = instQueue->queue[i]->operation, index = instQueue->queue[i]->index;
+			insertPrintUnit(activeUnit->activeUnit[type]->units[index]);
+			activeUnit->activeUnit[type]->units[index]->instruction->empty = Yes;
+			activeUnit->activeUnit[type]->units[index] = initUnit(type, index);
+			activeUnit->activeUnit[type]->units[index]->empty = Yes;
+			activeUnit->activeUnit[type]->activeUnitsNum--;
 		}
 	}
 }
-
-void printUnitsToTraceInstFile(FILE* fd) {
+//
+void printUnitsToTraceInstFile(FILE* file) {
 	sort();
-	int listLength = getLinkedListLength();
+	int listLength = length();
 	for (int i = 0; i < listLength; i++) {
-		printTracinstFile(fd, head->op, head->unitType, head->unitIndex, head->fetchCC, head->issueCC, head->readCC, head->exeCC, head->writeCC);
-		deleteFirst();
+		printTracinstFile(file, head->op, head->unitType, head->unitIndex, head->fetchCC, head->issueCC, head->readCC, head->exeCC, head->writeCC);
+		deletePrintUnit();
 	}
 }
-
-void printTracinstFile(FILE* fd, unsigned int opLine, int type, int index, int fetch, int issue, int read, int exe, int write) {
-	fseek(fd, 0, SEEK_END);
-	fprintf(fd, "%.8x %d %s%d %d %d %d %d\n", opLine, fetch, unitsTypeNames[type], index, issue, read, exe, write);
+//
+void printTracinstFile(FILE* file, unsigned int opLine, int type, int index, int fetch, int issue, int read, int exe, int write) {
+	fseek(file, 0, SEEK_END);
+	fprintf(file, "%.8x %d %s%d %d %d %d %d\n", opLine, fetch, unitsTypeNames[type], index, issue, read, exe, write);
 }
-
-unit* createEmptyPrintUnit() {
-	unit* src = (unit*)malloc(sizeof(unit));
-	if (!src) {
+//
+PrintUnit* initPrintUnit() {
+	PrintUnit* printUnit = (PrintUnit*)malloc(sizeof(PrintUnit));
+	if (!printUnit) {
 		return;
 	}
-	src->op = src->unitType = src->unitIndex = src->fetchCC = src->issueCC = src->readCC = src->exeCC = src->writeCC = -1;
-	return src;
-}
-void insertFirst(Unit* unitSrc) {
+	printUnit->op = printUnit->unitType = printUnit->unitIndex = printUnit->fetchCC = printUnit->issueCC = printUnit->readCC = printUnit->exeCC = printUnit->writeCC = -1;
+	return printUnit;
+}//
+void insertPrintUnit(Unit* unit) {
 	// create a link
-	unit* src = malloc(sizeof(unit));
-	if (src == NULL) {
+	PrintUnit* printUnit = malloc(sizeof(PrintUnit));
+	if (printUnit == NULL) {
 		return;
 	}
-	src->op = unitSrc->instruction->command;
-	src->unitType = unitSrc->type;
-	src->unitIndex = unitSrc->unitNum;
-	src->fetchCC = unitSrc->instruction->fetchedTime;
-	src->issueCC = unitSrc->instruction->stateCC[ISSUE];
-	src->readCC = unitSrc->instruction->stateCC[READ_OPERAND];
-	src->exeCC = unitSrc->instruction->stateCC[EXECUTION];
-	src->writeCC = unitSrc->instruction->stateCC[WRITE_RESULT];
+	printUnit->op = unit->instruction->command;
+	printUnit->unitType = unit->type;
+	printUnit->unitIndex = unit->unitNum;
+	printUnit->fetchCC = unit->instruction->fetchCycles;
+	printUnit->issueCC = unit->instruction->clockCyclesOperation[ISSUE];
+	printUnit->readCC = unit->instruction->clockCyclesOperation[READ_OPERAND];
+	printUnit->exeCC = unit->instruction->clockCyclesOperation[EXECUTION];
+	printUnit->writeCC = unit->instruction->clockCyclesOperation[WRITE_RESULT];
 
-	src->next = head;
+	printUnit->next = head;
 
-	head = src;
+	head = printUnit;
 }
+//
+PrintUnit* deletePrintUnit() {
 
-unit* deleteFirst() {
-
-	unit* tempLink = head;
+	PrintUnit* tempLink = head;
 	head = head->next;
 	return tempLink;
 }
-
-int isEmpty() {
+//
+int empty() {
 	return head == NULL;
 }
-
-int getLinkedListLength() {
+//
+int length() {
 	int length = 0;
-	unit* current;
+	PrintUnit* current;
 
 	for (current = head; current != NULL; current = current->next) {
 		length++;
@@ -566,15 +564,15 @@ int getLinkedListLength() {
 
 	return length;
 }
-
+//
 void sort() {
 
 	int i, j, k, tempKey;
-	unit* current;
-	unit* next;
-	unit* temp = createEmptyPrintUnit();
+	PrintUnit* current;
+	PrintUnit* next;
+	PrintUnit* temp = initPrintUnit();
 
-	int size = getLinkedListLength();
+	int size = length();
 	k = size;
 
 	for (i = 0; i < size - 1; i++, k--) {
@@ -584,9 +582,9 @@ void sort() {
 		for (j = 1; j < k; j++) {
 
 			if (current->fetchCC > next->fetchCC) {
-				setData(current, temp);
-				setData(next, current);
-				setData(temp, next);
+				updatePrintUnit(current, temp);
+				updatePrintUnit(next, current);
+				updatePrintUnit(temp, next);
 			}
 
 			current = current->next;
@@ -594,183 +592,186 @@ void sort() {
 		}
 	}
 }
-
-void setData(unit* unitSrc, unit* dst) {
-	dst->op = unitSrc->op;
-	dst->unitType = unitSrc->unitType;
-	dst->unitIndex = unitSrc->unitIndex;
-	dst->fetchCC = unitSrc->fetchCC;
-	dst->issueCC = unitSrc->issueCC;
-	dst->readCC = unitSrc->readCC;
-	dst->exeCC = unitSrc->exeCC;
-	dst->writeCC = unitSrc->writeCC;
+//
+void updatePrintUnit(PrintUnit* printUnitSource, PrintUnit* printUnitDestenation) {
+	printUnitDestenation->op = printUnitSource->op;
+	printUnitDestenation->unitType = printUnitSource->unitType;
+	printUnitDestenation->unitIndex = printUnitSource->unitIndex;
+	printUnitDestenation->fetchCC = printUnitSource->fetchCC;
+	printUnitDestenation->issueCC = printUnitSource->issueCC;
+	printUnitDestenation->readCC = printUnitSource->readCC;
+	printUnitDestenation->exeCC = printUnitSource->exeCC;
+	printUnitDestenation->writeCC = printUnitSource->writeCC;
 
 }
 
 //simulator
 
 int simulator(char** filesPaths) {
-	FILE* filesFd[NUM_OF_FILES];
-	cfg* cfg;
-	InstructionQueue* instQueue;
-	FunctionalUnit* functionalUnit;
+	FILE* filesArray[FILES_NUMBER];
+	Configuration* cfg;
+	InstQueue* instructionQueue;
+	ActiveUnit* activelUnit;
+
+	double regs[REGISTERS_NUMBER] = { 0 };
 	int memory[MEMORY_LENGTH] = { 0 };
-	double regs[NUM_OF_REGISTERS] = { 0 };
 
-	int numOfLines;
 	unsigned int pc = 0;
-	int instNum = 0;
-	unsigned int op = 0;
-	unsigned int lineNum = 0;
-	int instQueueIndex = -1;
-	int cc = -1;
-	int canRun = Yes;
-	int haltSet = No;
-	int tempNumOfWorkingInst = numOfWorkingUnits;
-	int canFetch = Yes;
-
-	int resultTypes[NUM_OF_REGISTERS];
-	int resultIndexes[NUM_OF_REGISTERS];
-	for (int i = 0; i < NUM_OF_REGISTERS; i++) {
-		resultTypes[i] = -1;
-		resultIndexes[i] = -1;
-	}
+	unsigned int operation = 0;
+	unsigned int lineNumber = 0;
+	int linesNumber;
+	int instructionNumber = 0;
+	int instructionIndex = -1;
+	int tempBussyInstructionsNumber = bussyUnitsNumber;
+	int clockCycles = -1;
+	int fetchPossible = Yes;
+	int runPossible = Yes;
+	int stopSet = No;
+	int resTypes[REGISTERS_NUMBER];
+	int resIndexes[REGISTERS_NUMBER];
 	char* line = calloc(1, sizeof(char) * MAX_LINE_LENGTH);
 
 	if (!line) {
-		freeSolution(0, 0, 0, 0, 0, 0);
+		freeSimulator(0, 0, 0, 0, 0, 0);
 		return 0;
 	}
-	instQueue = initializeInstQueue();
-	if (!instQueue) {
-		freeSolution(0, line, 0, 0, 0, 0);
+	for (int i = 0; i < REGISTERS_NUMBER; i++) {
+		resTypes[i] = -1;
+		resIndexes[i] = -1;
+	}
+	
+
+	instructionQueue = initInstQueue();
+	if (!instructionQueue) {
+		freeSimulator(0, line, 0, 0, 0, 0);
 		return 0;
 	}
-	if (!verifyFiles(filesFd, filesPaths)) {
+	if (!openFiles(filesArray, filesPaths)) {
 		return 0;
 	}
-	if ((numOfLines = readMemin(filesFd[MEMIN], line, memory)) == 0) {
-		freeSolution(filesFd, line, 0, 0, 0, instQueue);
+	if ((linesNumber = initMemory(filesArray[MEMIN], line, memory)) == 0) {
+		freeSimulator(filesArray, line, 0, 0, 0, instructionQueue);
 		return 0;
 	}
-	initializeRegs(regs);
-	if ((cfg = parseConfig(filesFd[CFG], line)) == 0) {
-		freeSolution(filesFd, line, cfg, 0, 0, instQueue);
+	initRegs(regs);
+	if ((cfg = analyzeConfiguration(filesArray[CONFIG], line)) == 0) {
+		freeSimulator(filesArray, line, cfg, 0, 0, instructionQueue);
 		return 0;
 	}
-	if ((functionalUnit = createFunctionalUnit(cfg)) == 0) {
-		freeSolution(filesFd, line, cfg, 0, functionalUnit, instQueue);
+	if ((activelUnit = initActiveUnit(cfg)) == 0) {
+		freeSimulator(filesArray, line, cfg, 0, activelUnit, instructionQueue);
 		return 0;
 	}
+
 	while (1) {
-		cc++;
-		printTraceunitFile(filesFd[TRACEUNIT], functionalUnit, resultTypes, resultIndexes, cc);
-		Instruction* instruction = createInstruction();
+		clockCycles++;
+		printTraceunitFile(filesArray[TRACEUNIT], activelUnit, resTypes, resIndexes, clockCycles);
+		Instruction* instruction = initInstruction();
 		if (!instruction) {
-			freeSolution(filesFd, line, cfg, instruction, functionalUnit, instQueue);
+			freeSimulator(filesArray, line, cfg, instruction, activelUnit, instructionQueue);
 			return 0;
 		}
-		if (!haltSet) {
-			parseInstruction(instruction, memory[instNum]);
+		if (!stopSet) {
+			analyzeInstruction(instruction, memory[instructionNumber]);
 			if (instruction->opcode == HALT) {
-				haltSet = Yes;
-				canRun = No;
-				for (int i = 0; i < NUM_OF_REGISTERS; i++) {
-					if (resultTypes[i] != -1) {
-						canRun = Yes;
+				stopSet = Yes;
+				runPossible = No;
+				for (int i = 0; i < REGISTERS_NUMBER; i++) {
+					if (resTypes[i] != -1) {
+						runPossible = Yes;
 					}
 				}
 			}
-			instQueueIndex = addInstructionToInstructionQueue(instQueue, instruction);
-			if (instQueueIndex != -1) {
-				instNum++;
-				instruction->fetchedTime = cc;
+			instructionIndex = enqueueInstQueue(instructionQueue, instruction);
+			if (instructionIndex != -1) {
+				instructionNumber++;
+				instruction->fetchCycles = clockCycles;
 			}
-			if (cc == 0) {
+			if (clockCycles == 0) {
 				continue;
 			}
-			tempNumOfWorkingInst = issue(functionalUnit, instQueue, resultTypes, resultIndexes, cc);
-			if (tempNumOfWorkingInst == 0) {
-				removeInstructionFromInstructionQueue(instQueue, instQueueIndex);
-				instNum--;
-				instruction->fetchedTime = -1;
+			tempBussyInstructionsNumber = issue(activelUnit, instructionQueue, resTypes, resIndexes, clockCycles);
+			if (tempBussyInstructionsNumber == 0) {
+				dequeueInstQueue(instructionQueue, instructionIndex);
+				instructionNumber--;
+				instruction->fetchCycles = -1;
 			}
 			else {
-				numOfWorkingUnits += tempNumOfWorkingInst;
+				bussyUnitsNumber += tempBussyInstructionsNumber;
 			}
 		}
 		else {
-			canRun = No;
-			for (int i = 0; i < NUM_OF_REGISTERS; i++) {
-				if (resultTypes[i] != -1) {
-					canRun = Yes;
+			runPossible = No;
+			for (int i = 0; i < REGISTERS_NUMBER; i++) {
+				if (resTypes[i] != -1) {
+					runPossible = Yes;
 				}
 			}
-			if (!canRun && numOfWorkingUnits == 0) {
-				cc--;
+			if (!runPossible && bussyUnitsNumber == 0) {
+				clockCycles--;
 				break;
 			}
-			if (numOfWorkingUnits > 0) {
-				numOfWorkingUnits += issue(functionalUnit, instQueue, resultTypes, resultIndexes, instQueueIndex, cc);
+			if (bussyUnitsNumber > 0) {
+				bussyUnitsNumber += issue(activelUnit, instructionQueue, resTypes, resIndexes, instructionIndex, clockCycles);
 			}
 
 		}
-		performCommand(functionalUnit, regs, cc, memory, filesFd, instQueue, resultTypes, resultIndexes);
+		performCommand(activelUnit, regs, clockCycles, memory, filesArray, instructionQueue, resTypes, resIndexes);
 	}
 
-	finalize(filesFd, memory, regs, line, cfg, functionalUnit, instQueue);
+	finalize(filesArray, memory, regs, line, cfg, activelUnit, instructionQueue);
 	return 0;
 }
 
-void performCommand(FunctionalUnit* functionalUnit, double  regs[16], int cc, int  memory[4096], FILE* filesFd[6], InstructionQueue* instQueue, int  resultTypes[16], int  resultIndexes[16])
+void performCommand(ActiveUnit* activelUnit, double  regs[16], int clockCycles, int  memory[4096], FILE* filesArray[6], InstQueue* instructionQueue, int  resTypes[16], int  resIndexes[16])
 {
-	readOperand(functionalUnit, regs, cc);
-	execution(functionalUnit, memory, regs, cc);
-	writeResult(filesFd, functionalUnit, instQueue, memory, resultTypes, resultIndexes, regs, cc);
+	readOp(activelUnit, regs, clockCycles);
+	executionOp(activelUnit, memory, regs, clockCycles);
+	writeResult(filesArray, activelUnit, instructionQueue, memory, resTypes, resIndexes, regs, clockCycles);
 
-	cleanAndWriteToFiles(filesFd[TRACEINST], functionalUnit, instQueue);
+	writeToFiles(filesArray[TRACEINST], activelUnit, instructionQueue);
 }
 
-void finalize(FILE* filesFd[6], int  memory[4096], double  regs[16], char* line, cfg* cfg, FunctionalUnit* functionalUnit, InstructionQueue* instQueue)
+void finalize(FILE* filesArray[6], int  memory[4096], double  regs[16], char* line, Configuration* cfg, ActiveUnit* activelUnit, InstQueue* instructionQueue)
 {
-	printUnitsToTraceInstFile(filesFd[TRACEINST]);
+	printUnitsToTraceInstFile(filesArray[TRACEINST]);
 
-	printMemoutFile(filesFd[MEMOUT], memory, MEMORY_LENGTH);
+	printMemoutFile(filesArray[MEMOUT], memory, MEMORY_LENGTH);
 
-	printRegoutFile(filesFd[REGOUT], regs);
+	printRegoutFile(filesArray[REGOUT], regs);
 
-	freeSolution(filesFd, line, cfg, 0, functionalUnit, instQueue);
+	freeSimulator(filesArray, line, cfg, 0, activelUnit, instructionQueue);
 }
 
-int readMemin(FILE* meminFd, char* line, int* memory) {
-	int numOfLines = 0;
-	int maxLine = 0;
+int initMemory(FILE* meminFile, char* line, int* memory) {
+	int linesNumber = 0;
+	int endLine = 0;
 	char currentLine[MAX_LINE_LENGTH];
-	while (fgets(line, MAX_LINE_LENGTH, meminFd) != 0) {
+	while (fgets(line, MAX_LINE_LENGTH, meminFile) != 0) {
 		if (sscanf(line, "%s", currentLine)) {
 			if (strcmp(currentLine, "0x00000000") != 0) {
-				maxLine = numOfLines;
+				endLine = linesNumber;
 			}
-			if (sscanf(currentLine, "%x", &memory[numOfLines]))
-				numOfLines++;
+			if (sscanf(currentLine, "%x", &memory[linesNumber]))
+				linesNumber++;
 			else return 0;
 
 		}
 		else return 0;
 	}
-	return maxLine;
+	return endLine;
 }
 
-void initializeRegs(double* regs) {
-	for (int i = 0; i < NUM_OF_REGISTERS; i++) {
-		regs[i] = i / 1.0;
+void initRegs(double* registers) {
+	for (int i = 0; i < REGISTERS_NUMBER; i++) {
+		registers[i] = i / 1.0;
 	}
 }
 
-int issue(FunctionalUnit* functionalUnit, InstructionQueue* queue, int* resultTypes, int* resultIndexes, int cc) {
+int issue(ActiveUnit* activeUnit, InstQueue* queue, int* resTypes, int* resIndexes, int clockCycles) {
 	int instUnitIndex = -1;
-	for (int i = 0; i < NUM_OF_INSTRUCTION_IN_QUEUE; i++) {
-		instUnitIndex += attachInstructionToUnit(functionalUnit, queue->queue[i], resultTypes, resultIndexes, cc);
+	for (int i = 0; i < NUM_OF_INSTRUCTION_QUEUE; i++) {
+		instUnitIndex += instructionToUnit(activeUnit, queue->queue[i], resTypes, resIndexes, clockCycles);
 		if (instUnitIndex == 0) {
 			return 1;
 		}
@@ -778,21 +779,21 @@ int issue(FunctionalUnit* functionalUnit, InstructionQueue* queue, int* resultTy
 	return 0;
 }
 
-int attachInstructionToUnit(FunctionalUnit* functionalUnits, Instruction* instruction, int* resultTypes, int* resultIndexes, int cc) {
-	if (!instruction || instruction->isEmpty == Yes) {
+int instructionToUnit(ActiveUnit* activeUnit, Instruction* instruction, int* resTypes, int* resIndexes, int clockCycles) {
+	if (!instruction || instruction->empty == Yes) {
 		return 0;
 	}
-	int type = instruction->instType;
+	int type = instruction->operation;
 	/*Halt instruction*/
 	if (type < 0 || type > 5) {
 		return 0;
 	}
-	if (functionalUnits->functionalUnit[type]->canInsert) {
-		for (int i = 0; i < functionalUnits->functionalUnit[type]->numOfTotalUnits; i++) {
-			if (!functionalUnits->functionalUnit[type]->units[i] || functionalUnits->functionalUnit[type]->units[i]->isEmpty) {
-				if (!functionalUnits->functionalUnit[type]->units[i]->busy && instruction->fetchedTime != cc && instruction->stateCC[ISSUE] == -1) {
-					if ((resultTypes[instruction->dst] == -1 && type != UNIT_ST) || (type == UNIT_ST)) {
-						setUnitFields(functionalUnits, type, i, instruction, resultIndexes, resultTypes, cc);
+	if (activeUnit->activeUnit[type]->canEnter) {
+		for (int i = 0; i < activeUnit->activeUnit[type]->totalUnitsNum; i++) {
+			if (!activeUnit->activeUnit[type]->units[i] || activeUnit->activeUnit[type]->units[i]->empty) {
+				if (!activeUnit->activeUnit[type]->units[i]->busy && instruction->fetchCycles != clockCycles && instruction->clockCyclesOperation[ISSUE] == -1) {
+					if ((resTypes[instruction->dst] == -1 && type != UNIT_ST) || (type == UNIT_ST)) {
+						setUnitFields(activeUnit, type, i, instruction, resIndexes, resTypes, clockCycles);
 						return 1;
 					}
 				}
@@ -802,59 +803,59 @@ int attachInstructionToUnit(FunctionalUnit* functionalUnits, Instruction* instru
 	return 0;
 }
 
-void setUnitFields(FunctionalUnit* functionalUnits, int type, int i, Instruction* instruction, int* resultIndexes, int* resultTypes, int cc)
+void setUnitFields(ActiveUnit* activeUnit, int type, int i, Instruction* instruction, int* resIndexes, int* resTypes, int clockCycles)
 {
-	functionalUnits->functionalUnit[type]->units[i]->busy = Yes;
-	functionalUnits->functionalUnit[type]->units[i]->instruction = instruction;
-	functionalUnits->functionalUnit[type]->units[i]->op = instruction->opcode;
+	activeUnit->activeUnit[type]->units[i]->busy = Yes;
+	activeUnit->activeUnit[type]->units[i]->instruction = instruction;
+	activeUnit->activeUnit[type]->units[i]->op = instruction->opcode;
 
-	functionalUnits->functionalUnit[type]->units[i]->Fi = instruction->dst;
-	functionalUnits->functionalUnit[type]->units[i]->Fj = instruction->src0;
-	functionalUnits->functionalUnit[type]->units[i]->Fk = instruction->src1;
+	activeUnit->activeUnit[type]->units[i]->f_i = instruction->dst;
+	activeUnit->activeUnit[type]->units[i]->f_j = instruction->src0;
+	activeUnit->activeUnit[type]->units[i]->f_k = instruction->src1;
 
-	functionalUnits->functionalUnit[type]->units[i]->QjIdx = resultIndexes[instruction->src0];
-	functionalUnits->functionalUnit[type]->units[i]->QkIdx = resultIndexes[instruction->src1];
+	activeUnit->activeUnit[type]->units[i]->q_j_index = resIndexes[instruction->src0];
+	activeUnit->activeUnit[type]->units[i]->q_k_index = resIndexes[instruction->src1];
 
-	functionalUnits->functionalUnit[type]->units[i]->QjType = resultTypes[instruction->src0];
-	functionalUnits->functionalUnit[type]->units[i]->QkType = resultTypes[instruction->src1];
+	activeUnit->activeUnit[type]->units[i]->q_j_type = resTypes[instruction->src0];
+	activeUnit->activeUnit[type]->units[i]->q_k_type = resTypes[instruction->src1];
 
-	functionalUnits->functionalUnit[type]->units[i]->Rj = (resultTypes[instruction->src0] == -1) ? Yes : No;
-	functionalUnits->functionalUnit[type]->units[i]->Rk = (resultTypes[instruction->src1] == -1) ? Yes : No;
+	activeUnit->activeUnit[type]->units[i]->r_j = (resTypes[instruction->src0] == -1) ? Yes : No;
+	activeUnit->activeUnit[type]->units[i]->r_k = (resTypes[instruction->src1] == -1) ? Yes : No;
 
-	functionalUnits->functionalUnit[type]->numOfActiveUnits++;
-	if (functionalUnits->functionalUnit[type]->numOfActiveUnits == functionalUnits->functionalUnit[type]->numOfTotalUnits) {
-		functionalUnits->functionalUnit[type]->canInsert = No;
+	activeUnit->activeUnit[type]->activeUnitsNum++;
+	if (activeUnit->activeUnit[type]->activeUnitsNum == activeUnit->activeUnit[type]->totalUnitsNum) {
+		activeUnit->activeUnit[type]->canEnter = No;
 	}
-	functionalUnits->functionalUnit[type]->units[i]->isEmpty = No;
+	activeUnit->activeUnit[type]->units[i]->empty = No;
 
-	functionalUnits->functionalUnit[type]->units[i]->instruction->stateCC[ISSUE] = cc;
+	activeUnit->activeUnit[type]->units[i]->instruction->clockCyclesOperation[ISSUE] = clockCycles;
 
-	if (functionalUnits->functionalUnit[type]->units[i]->type != UNIT_ST) {
-		resultTypes[instruction->dst] = functionalUnits->functionalUnit[type]->units[i]->type;
-		resultIndexes[instruction->dst] = functionalUnits->functionalUnit[type]->units[i]->unitNum;
+	if (activeUnit->activeUnit[type]->units[i]->type != UNIT_ST) {
+		resTypes[instruction->dst] = activeUnit->activeUnit[type]->units[i]->type;
+		resIndexes[instruction->dst] = activeUnit->activeUnit[type]->units[i]->unitNum;
 	}
 
-	functionalUnits->functionalUnit[type]->units[i]->instruction->instIndex = i;
+	activeUnit->activeUnit[type]->units[i]->instruction->index = i;
 }
 
-void readOperand(FunctionalUnit* functionalUnit, double* regs, int cc) {
-	for (int i = 0; i < NUM_OF_UNITS; i++) {
-		for (int j = 0; j < functionalUnit->functionalUnit[i]->numOfTotalUnits; j++) {
-			if (!functionalUnit->functionalUnit[i]->units[j]->isEmpty && !functionalUnit->functionalUnit[i]->units[j]->instruction->isEmpty) {
-				if (functionalUnit->functionalUnit[i]->units[j]->instruction->stateCC[ISSUE] < cc) {
-					if (functionalUnit->functionalUnit[i]->units[j]->Rj == Yes && functionalUnit->functionalUnit[i]->units[j]->Rk == Yes) {
-						if (functionalUnit->functionalUnit[i]->units[j]->instruction->stateCC[READ_OPERAND] == -1) {
-							functionalUnit->functionalUnit[i]->units[j]->FjVal = regs[functionalUnit->functionalUnit[i]->units[j]->Fj];
-							functionalUnit->functionalUnit[i]->units[j]->FkVal = regs[functionalUnit->functionalUnit[i]->units[j]->Fk];
+void readOp(ActiveUnit* activeUnit, double* registers, int clockCycles) {
+	for (int i = 0; i < UNITS_NUMBER; i++) {
+		for (int j = 0; j < activeUnit->activeUnit[i]->totalUnitsNum; j++) {
+			if (!activeUnit->activeUnit[i]->units[j]->empty && !activeUnit->activeUnit[i]->units[j]->instruction->empty) {
+				if (activeUnit->activeUnit[i]->units[j]->instruction->clockCyclesOperation[ISSUE] < clockCycles) {
+					if (activeUnit->activeUnit[i]->units[j]->r_j == Yes && activeUnit->activeUnit[i]->units[j]->r_k == Yes) {
+						if (activeUnit->activeUnit[i]->units[j]->instruction->clockCyclesOperation[READ_OPERAND] == -1) {
+							activeUnit->activeUnit[i]->units[j]->f_j_value = registers[activeUnit->activeUnit[i]->units[j]->f_j];
+							activeUnit->activeUnit[i]->units[j]->f_k_value = registers[activeUnit->activeUnit[i]->units[j]->f_k];
 
-							functionalUnit->functionalUnit[i]->units[j]->Rj = No;
-							functionalUnit->functionalUnit[i]->units[j]->Rk = No;
-							functionalUnit->functionalUnit[i]->units[j]->instruction->stateCC[READ_OPERAND] = cc;
-							if (functionalUnit->functionalUnit[i]->delay == 1) {
-								functionalUnit->functionalUnit[i]->units[j]->instruction->executionTime = cc + functionalUnit->functionalUnit[i]->delay;
+							activeUnit->activeUnit[i]->units[j]->r_j = No;
+							activeUnit->activeUnit[i]->units[j]->r_k = No;
+							activeUnit->activeUnit[i]->units[j]->instruction->clockCyclesOperation[READ_OPERAND] = clockCycles;
+							if (activeUnit->activeUnit[i]->delay == 1) {
+								activeUnit->activeUnit[i]->units[j]->instruction->executionCycles = clockCycles + activeUnit->activeUnit[i]->delay;
 							}
 							else {
-								functionalUnit->functionalUnit[i]->units[j]->instruction->executionTime = cc + functionalUnit->functionalUnit[i]->delay - 1;
+								activeUnit->activeUnit[i]->units[j]->instruction->executionCycles = clockCycles + activeUnit->activeUnit[i]->delay - 1;
 							}
 						}
 					}
@@ -864,20 +865,20 @@ void readOperand(FunctionalUnit* functionalUnit, double* regs, int cc) {
 	}
 }
 
-void execution(FunctionalUnit* functionalUnit, int* mem, double* regs, int cc) {
-	for (int i = 0; i < NUM_OF_UNITS; i++) {
-		for (int j = 0; j < functionalUnit->functionalUnit[i]->numOfTotalUnits; j++) {
-			if (!functionalUnit->functionalUnit[i]->units[j]->isEmpty) {
-				if (functionalUnit->functionalUnit[i]->units[j]->instruction->executionTime >= 0 &&
-					0 < functionalUnit->functionalUnit[i]->units[j]->instruction->stateCC[READ_OPERAND] &&
-					functionalUnit->functionalUnit[i]->units[j]->instruction->stateCC[READ_OPERAND] < cc) {
+void executionOp(ActiveUnit* activeUnit, int* memory, double* registers, int clockCycles) {
+	for (int i = 0; i < UNITS_NUMBER; i++) {
+		for (int j = 0; j < activeUnit->activeUnit[i]->totalUnitsNum; j++) {
+			if (!activeUnit->activeUnit[i]->units[j]->empty) {
+				if (activeUnit->activeUnit[i]->units[j]->instruction->executionCycles >= 0 &&
+					0 < activeUnit->activeUnit[i]->units[j]->instruction->clockCyclesOperation[READ_OPERAND] &&
+					activeUnit->activeUnit[i]->units[j]->instruction->clockCyclesOperation[READ_OPERAND] < clockCycles) {
 
-					if (functionalUnit->functionalUnit[i]->units[j]->instruction->executionTime == cc) {
-						if (functionalUnit->functionalUnit[i]->units[j]->instruction->instRes == -1) {
-							executionInstruction(functionalUnit, mem, regs, functionalUnit->functionalUnit[i]->units[j]->instruction->opcode, i, j, cc);
+					if (activeUnit->activeUnit[i]->units[j]->instruction->executionCycles == clockCycles) {
+						if (activeUnit->activeUnit[i]->units[j]->instruction->result == -1) {
+							executionInst(activeUnit, memory, registers, activeUnit->activeUnit[i]->units[j]->instruction->opcode, i, j, clockCycles);
 
 						}
-						functionalUnit->functionalUnit[i]->units[j]->instruction->stateCC[EXECUTION] = cc;
+						activeUnit->activeUnit[i]->units[j]->instruction->clockCyclesOperation[EXECUTION] = clockCycles;
 					}
 				}
 			}
@@ -885,38 +886,38 @@ void execution(FunctionalUnit* functionalUnit, int* mem, double* regs, int cc) {
 	}
 }
 
-void executionInstruction(FunctionalUnit* functionalUnit, int* mem, double* regs, unsigned int instOp, int i, int j, int cc) {
-	switch (instOp) {
-	case ADD:
-		functionalUnit->functionalUnit[i]->units[j]->instruction->instRes = functionalUnit->functionalUnit[i]->units[j]->FjVal + functionalUnit->functionalUnit[i]->units[j]->FkVal;
+void executionInst(ActiveUnit* activeUnit, int* memory, double* registers, unsigned int opcode, int i, int j, int clockCycles) {
+	switch (opcode) {
+	case OP_ADD:
+		activeUnit->activeUnit[i]->units[j]->instruction->result = activeUnit->activeUnit[i]->units[j]->f_j_value + activeUnit->activeUnit[i]->units[j]->f_k_value;
 		break;
-	case SUB:
-		functionalUnit->functionalUnit[i]->units[j]->instruction->instRes = functionalUnit->functionalUnit[i]->units[j]->FjVal - functionalUnit->functionalUnit[i]->units[j]->FkVal;
+	case OP_SUB:
+		activeUnit->activeUnit[i]->units[j]->instruction->result = activeUnit->activeUnit[i]->units[j]->f_j_value - activeUnit->activeUnit[i]->units[j]->f_k_value;
 		break;
-	case MULT:
-		functionalUnit->functionalUnit[i]->units[j]->instruction->instRes = functionalUnit->functionalUnit[i]->units[j]->FjVal * functionalUnit->functionalUnit[i]->units[j]->FkVal;
+	case OP_MULT:
+		activeUnit->activeUnit[i]->units[j]->instruction->result = activeUnit->activeUnit[i]->units[j]->f_j_value * activeUnit->activeUnit[i]->units[j]->f_k_value;
 		break;
-	case DIV:
-		functionalUnit->functionalUnit[i]->units[j]->instruction->instRes = functionalUnit->functionalUnit[i]->units[j]->FjVal / functionalUnit->functionalUnit[i]->units[j]->FkVal;
+	case OP_DIV:
+		activeUnit->activeUnit[i]->units[j]->instruction->result = activeUnit->activeUnit[i]->units[j]->f_j_value / activeUnit->activeUnit[i]->units[j]->f_k_value;
 		break;
-	case LD:
-		functionalUnit->functionalUnit[i]->units[j]->instruction->instRes = singlePrecisionToFloat(mem[functionalUnit->functionalUnit[i]->units[j]->instruction->imm]);
+	case OP_LD:
+		activeUnit->activeUnit[i]->units[j]->instruction->result = singlePrecisionToFloat(memory[activeUnit->activeUnit[i]->units[j]->instruction->imm]);
 		break;
-	case ST:
-		functionalUnit->functionalUnit[i]->units[j]->instruction->instRes = functionalUnit->functionalUnit[i]->units[j]->FkVal;
-		checkIfLdAndStCollide(functionalUnit, functionalUnit->functionalUnit[i]->units[j]->instruction, cc);
+	case OP_ST:
+		activeUnit->activeUnit[i]->units[j]->instruction->result = activeUnit->activeUnit[i]->units[j]->f_k_value;
+		checkLdSt(activeUnit, activeUnit->activeUnit[i]->units[j]->instruction, clockCycles);
 		break;
 	}
 }
 
-void checkIfLdAndStCollide(FunctionalUnit* functionalUnit, Instruction* stInst, int cc) {
-	for (int i = 0; i < functionalUnit->functionalUnit[LD_UNIT]->numOfTotalUnits; i++) {
-		if (!functionalUnit->functionalUnit[LD_UNIT]->units[i]->isEmpty) {
-			if (functionalUnit->functionalUnit[LD_UNIT]->units[i]->instruction->imm == stInst->imm) {
-				if (functionalUnit->functionalUnit[LD_UNIT]->units[i]->instruction->stateCC[ISSUE] < stInst->stateCC[ISSUE]) {
-					if (functionalUnit->functionalUnit[LD_UNIT]->units[i]->instruction->stateCC[EXECUTION] <= cc &&
-						stInst->executionTime == cc) {
-						stInst->executionTime++;
+void checkLdSt(ActiveUnit* activeUnit, Instruction* stInst, int clockCycles) {
+	for (int i = 0; i < activeUnit->activeUnit[LD_UNIT]->totalUnitsNum; i++) {
+		if (!activeUnit->activeUnit[LD_UNIT]->units[i]->empty) {
+			if (activeUnit->activeUnit[LD_UNIT]->units[i]->instruction->imm == stInst->imm) {
+				if (activeUnit->activeUnit[LD_UNIT]->units[i]->instruction->clockCyclesOperation[ISSUE] < stInst->clockCyclesOperation[ISSUE]) {
+					if (activeUnit->activeUnit[LD_UNIT]->units[i]->instruction->clockCyclesOperation[EXECUTION] <= clockCycles &&
+						stInst->executionCycles == clockCycles) {
+						stInst->executionCycles++;
 					}
 				}
 			}
@@ -924,89 +925,89 @@ void checkIfLdAndStCollide(FunctionalUnit* functionalUnit, Instruction* stInst, 
 	}
 }
 
-void writeResult(FILE** fds, FunctionalUnit* functionalUnit, InstructionQueue* queue, int* mem, int* resultTypes, int* resultIndexes, double* regs, int cc) {
-	int canWriteresultTypes = 0, numOfUnits;
-	for (int x = 0; x < NUM_OF_UNITS; x++) {
-		numOfUnits = 0;
-		for (int y = 0; y < functionalUnit->functionalUnit[x]->numOfTotalUnits; y++) {
-			if (functionalUnit->functionalUnit[x]->units[y]->isEmpty) {
+void writeResult(FILE** file, ActiveUnit* activeUnit, InstQueue* instQueue, int* memory, int* resTypes, int* resIndexes, double* registers, int clockCycles) {
+	int writeResultTypes = 0, unitsNum;
+	for (int x = 0; x < UNITS_NUMBER; x++) {
+		unitsNum = 0;
+		for (int y = 0; y < activeUnit->activeUnit[x]->totalUnitsNum; y++) {
+			if (activeUnit->activeUnit[x]->units[y]->empty) {
 				continue;
 			}
-			writeResultFunctionalUnit(fds, functionalUnit, functionalUnit->functionalUnit[x]->units[y], mem, resultTypes, resultIndexes, regs, cc);
+			writeResultActiveUnit(file, activeUnit, activeUnit->activeUnit[x]->units[y], memory, resTypes, resIndexes, registers, clockCycles);
 		}
 	}
 }
 
-void writeResultFunctionalUnit(FILE** fds, FunctionalUnit* functionalUnits, Unit* unit, int* mem, int* resultTypes, int* resultIndexes, double* regs, int cc) {
-	int canWriteresultTypes = 0;
-	if (!unit->canWriteResult) {
-		for (int x = 0; x < NUM_OF_UNITS; x++) {
-			for (int y = 0; y < functionalUnits->functionalUnit[x]->numOfTotalUnits; y++) {
-				if (functionalUnits->functionalUnit[x]->units[y]->isEmpty) {
+void writeResultActiveUnit(FILE** file, ActiveUnit* activeUnit, Unit* unit, int* memory, int* resTypes, int* resIndexes, double* registers, int clockCycles) {
+	int writeResultTypes = 0;
+	if (!unit->writeResult) {
+		for (int x = 0; x < UNITS_NUMBER; x++) {
+			for (int y = 0; y < activeUnit->activeUnit[x]->totalUnitsNum; y++) {
+				if (activeUnit->activeUnit[x]->units[y]->empty) {
 					continue;
 				}
-				if ((functionalUnits->functionalUnit[x]->units[y]->Fj != unit->Fi || functionalUnits->functionalUnit[x]->units[y]->Rj == No) &&
-					(functionalUnits->functionalUnit[x]->units[y]->Fk != unit->Fi || functionalUnits->functionalUnit[x]->units[y]->Rk == No)) {
-					canWriteresultTypes++;
+				if ((activeUnit->activeUnit[x]->units[y]->f_j != unit->f_i || activeUnit->activeUnit[x]->units[y]->r_j == No) &&
+					(activeUnit->activeUnit[x]->units[y]->f_k != unit->f_i || activeUnit->activeUnit[x]->units[y]->r_k == No)) {
+					writeResultTypes++;
 				}
 			}
 		}
-		if (canWriteresultTypes != numOfWorkingUnits || numOfWorkingUnits == 0) {
+		if (writeResultTypes != bussyUnitsNumber || bussyUnitsNumber == 0) {
 			return;
 		}
 		else {
-			unit->canWriteResult = Yes;
+			unit->writeResult = Yes;
 		}
 	}
 	else {
-		canWriteresultTypes = 0;
-		for (int x = 0; x < NUM_OF_UNITS; x++) {
-			for (int y = 0; y < functionalUnits->functionalUnit[x]->numOfTotalUnits; y++) {
-				if (functionalUnits->functionalUnit[x]->units[y]->isEmpty) {
+		writeResultTypes = 0;
+		for (int x = 0; x < UNITS_NUMBER; x++) {
+			for (int y = 0; y < activeUnit->activeUnit[x]->totalUnitsNum; y++) {
+				if (activeUnit->activeUnit[x]->units[y]->empty) {
 					continue;
 				}
-				if (0 < unit->instruction->stateCC[EXECUTION] && unit->instruction->stateCC[EXECUTION] < cc) {
-					if (areUnitsEqual(functionalUnits, functionalUnits->functionalUnit[x]->units[y]->QjType, functionalUnits->functionalUnit[x]->units[y]->QjIdx, unit, 1)) {
-						functionalUnits->functionalUnit[x]->units[y]->QjIdx = -1;
-						functionalUnits->functionalUnit[x]->units[y]->QjType = -1;
-						functionalUnits->functionalUnit[x]->units[y]->Rj = Yes;
+				if (0 < unit->instruction->clockCyclesOperation[EXECUTION] && unit->instruction->clockCyclesOperation[EXECUTION] < clockCycles) {
+					if (unitsCompare(activeUnit, activeUnit->activeUnit[x]->units[y]->q_j_type, activeUnit->activeUnit[x]->units[y]->q_j_index, unit, 1)) {
+						activeUnit->activeUnit[x]->units[y]->q_j_index = -1;
+						activeUnit->activeUnit[x]->units[y]->q_j_type = -1;
+						activeUnit->activeUnit[x]->units[y]->r_j = Yes;
 					}
-					else if (areUnitsEqual(functionalUnits, functionalUnits->functionalUnit[x]->units[y]->QkType, functionalUnits->functionalUnit[x]->units[y]->QkIdx, unit, 0)) {
-						functionalUnits->functionalUnit[x]->units[y]->QkIdx = -1;
-						functionalUnits->functionalUnit[x]->units[y]->QkType = -1;
-						functionalUnits->functionalUnit[x]->units[y]->Rk = Yes;
+					else if (unitsCompare(activeUnit, activeUnit->activeUnit[x]->units[y]->q_k_type, activeUnit->activeUnit[x]->units[y]->q_k_index, unit, 0)) {
+						activeUnit->activeUnit[x]->units[y]->q_k_index = -1;
+						activeUnit->activeUnit[x]->units[y]->q_k_type = -1;
+						activeUnit->activeUnit[x]->units[y]->r_k = Yes;
 					}
 				}
 			}
 		}
-		if (0 < unit->instruction->stateCC[EXECUTION] && unit->instruction->stateCC[EXECUTION] < cc) {
+		if (0 < unit->instruction->clockCyclesOperation[EXECUTION] && unit->instruction->clockCyclesOperation[EXECUTION] < clockCycles) {
 			switch (unit->type) {
 			case UNIT_ST:
-				mem[unit->instruction->imm] = floatToSinglePrecision(unit->instruction->instRes);
+				memory[unit->instruction->imm] = floatToSinglePrecision(unit->instruction->result);
 				break;
 			case UNIT_LD:
-				regs[unit->Fi] = unit->instruction->instRes;
+				registers[unit->f_i] = unit->instruction->result;
 				break;
 			default:
-				regs[unit->Fi] = unit->instruction->instRes;
+				registers[unit->f_i] = unit->instruction->result;
 				break;
 			}
-			numOfWorkingUnits--;
-			unit->instruction->stateCC[WRITE_RESULT] = cc;
-			resultTypes[unit->Fi] = -1;
-			resultIndexes[unit->Fi] = -1;
+			bussyUnitsNumber--;
+			unit->instruction->clockCyclesOperation[WRITE_RESULT] = clockCycles;
+			resTypes[unit->f_i] = -1;
+			resIndexes[unit->f_i] = -1;
 			unit->busy = No;
 		}
 	}
 }
 
-void freeSolution(FILE** fds, char* line, cfg* cfg, Instruction* cmd, FunctionalUnit* fus, InstructionQueue* queue) {
-	for (int i = 0; i < NUM_OF_FILES; i++) {
-		fclose(fds[i]);
+void freeSimulator(FILE** file, char* line, Configuration* config, Instruction* inst, ActiveUnit* activeUnit, InstQueue* instQueue) {
+	for (int i = 0; i < FILES_NUMBER; i++) {
+		fclose(file[i]);
 	}
 	if (line) { free(line); }
-	freeInstruction(cmd);
-	freeConfig(cfg);
-	freeFunctionalUnit(fus);
-	freeInstructionQueue(queue);
+	freeInstruction(inst);
+	freeConfiguration(config);
+	freeActiveUnit(activeUnit);
+	freeInstQueue(instQueue);
 }
