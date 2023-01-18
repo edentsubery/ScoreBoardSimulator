@@ -113,4 +113,4 @@ void writeResultActiveUnit(FILE** fds, ActiveUnit* fus, Unit* unit, int* mem, in
 
 void checkLdSt(ActiveUnit* fu, Instruction* stInst, int cc);
 
-void freeSimulator(FILE** fds, char* line, Configuration* cfg, Instruction* cmd, ActiveUnit* fus, InstQueue* queue);
+void freeSimulator(char* line);

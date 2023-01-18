@@ -9,7 +9,7 @@ Configuration* initConfiguration() {
 	return config;
 }
 //
-void freeConfiguration(Configuration* cfg) {
+void freeConfiguration() {
 	if (!cfg) {
 		return;
 	}
@@ -31,6 +31,12 @@ Configuration* analyzeConfiguration(FILE* cfgFile, char* line) {
 		}
 	}
 	return config;
+}
+//
+int analyzePar(char* pointer, int parType, char* boundary) {
+	pointer = strtok(NULL, boundary);
+	int num = atoi(pointer);
+	return num;
 }
 //
 int analyzeConfig(Configuration* cfg, char* line) {
@@ -80,12 +86,7 @@ int analyzeConfig(Configuration* cfg, char* line) {
 	}
 	return 1;
 }
-//
-int analyzePar(char* pointer, int parType, char* boundary) {
-	pointer = strtok(NULL, boundary);
-	int num = atoi(pointer);
-	return num;
-}
+
 //
 int traceUnitAnalyze(char* pointer, int parType, char* boundary, char* unitTraceName) {
 	pointer = strtok(NULL, boundary);
@@ -188,15 +189,14 @@ InstQueue* initInstQueue() {
 	return instQueue;
 }
 //
-void freeInstQueue(InstQueue* instQueue) {
-	if (instQueue) {
+void freeInstQueue() {
+	if (instructionQueue) {
 		for (int i = 0; i < NUM_OF_INSTRUCTION_QUEUE; i++) {
-			freeInstruction(instQueue->queue[i]);
+			freeInstruction(instructionQueue->queue[i]);
 		}
-		free(instQueue);
 	}
 }
-//
+
 int enqueueInstQueue(InstQueue* instQueue, Instruction* inst) {
 	if (inst->operation == -1) {
 		return -1;
@@ -335,7 +335,7 @@ ActiveUnit* initActiveUnit(Configuration* config) {
 	return activeUnit;
 }
 //
-void freeActiveUnit(ActiveUnit* activeUnit) {
+void freeActiveUnit() {
 	if (activeUnit == NULL) {
 		return;
 	}
@@ -518,7 +518,7 @@ void printTracinstFile(FILE* file, unsigned int opLine, int type, int index, int
 PrintUnit* initPrintUnit() {
 	PrintUnit* printUnit = (PrintUnit*)malloc(sizeof(PrintUnit));
 	if (!printUnit) {
-		return;
+		return NULL;
 	}
 	printUnit->op = printUnit->unitType = printUnit->unitIndex = printUnit->fetchCC = printUnit->issueCC = printUnit->readCC = printUnit->exeCC = printUnit->writeCC = -1;
 	return printUnit;
@@ -567,7 +567,7 @@ int length() {
 //
 void sort() {
 
-	int i, j, k, tempKey;
+	int i, j, k;
 	PrintUnit* current;
 	PrintUnit* next;
 	PrintUnit* temp = initPrintUnit();
@@ -605,17 +605,26 @@ void updatePrintUnit(PrintUnit* printUnitSource, PrintUnit* printUnitDestenation
 
 }
 
+double* getDoubleZeros(int size) {
+	double* ret = malloc(size * sizeof(double));
+	for (int i = 0; i < size; i++) {
+		ret[i] = 0.0;
+	}
+	return ret;
+}
+int* getIntZeros(int size) {
+	int* ret = malloc(size * sizeof(int));
+	for (int i = 0; i < size; i++) {
+		ret[i] = 0;
+	}
+	return ret;
+}
 //simulator
 
 int simulator(char** filesPaths) {
-	FILE* filesArray[FILES_NUMBER];
-	Configuration* cfg;
-	InstQueue* instructionQueue;
-	ActiveUnit* activelUnit;
 
-	double regs[REGISTERS_NUMBER] = { 0 };
-	int memory[MEMORY_LENGTH] = { 0 };
-
+	regs = getDoubleZeros(REGISTERS_NUMBER);
+	memory = getIntZeros(MEMORY_LENGTH);
 	unsigned int pc = 0;
 	unsigned int operation = 0;
 	unsigned int lineNumber = 0;
@@ -632,7 +641,7 @@ int simulator(char** filesPaths) {
 	char* line = calloc(1, sizeof(char) * MAX_LINE_LENGTH);
 
 	if (!line) {
-		freeSimulator(0, 0, 0, 0, 0, 0);
+		freeSimulator(0);
 		return 0;
 	}
 	for (int i = 0; i < REGISTERS_NUMBER; i++) {
@@ -643,32 +652,32 @@ int simulator(char** filesPaths) {
 
 	instructionQueue = initInstQueue();
 	if (!instructionQueue) {
-		freeSimulator(0, line, 0, 0, 0, 0);
+		freeSimulator( line);
 		return 0;
 	}
 	if (!openFiles(filesArray, filesPaths)) {
 		return 0;
 	}
 	if ((linesNumber = initMemory(filesArray[MEMIN], line, memory)) == 0) {
-		freeSimulator(filesArray, line, 0, 0, 0, instructionQueue);
+		freeSimulator(line);
 		return 0;
 	}
 	initRegs(regs);
 	if ((cfg = analyzeConfiguration(filesArray[CONFIG], line)) == 0) {
-		freeSimulator(filesArray, line, cfg, 0, 0, instructionQueue);
+		freeSimulator(line);
 		return 0;
 	}
-	if ((activelUnit = initActiveUnit(cfg)) == 0) {
-		freeSimulator(filesArray, line, cfg, 0, activelUnit, instructionQueue);
+	if ((activeUnit = initActiveUnit(cfg)) == 0) {
+		freeSimulator(line);
 		return 0;
 	}
-
+	printf("blup\n");
 	while (1) {
 		clockCycles++;
-		printTraceunitFile(filesArray[TRACEUNIT], activelUnit, resTypes, resIndexes, clockCycles);
+		printTraceunitFile(filesArray[TRACEUNIT], activeUnit, resTypes, resIndexes, clockCycles);
 		Instruction* instruction = initInstruction();
 		if (!instruction) {
-			freeSimulator(filesArray, line, cfg, instruction, activelUnit, instructionQueue);
+			freeSimulator(line);
 			return 0;
 		}
 		if (!stopSet) {
@@ -690,7 +699,7 @@ int simulator(char** filesPaths) {
 			if (clockCycles == 0) {
 				continue;
 			}
-			tempBussyInstructionsNumber = issue(activelUnit, instructionQueue, resTypes, resIndexes, clockCycles);
+			tempBussyInstructionsNumber = issue(activeUnit, instructionQueue, resTypes, resIndexes, clockCycles);
 			if (tempBussyInstructionsNumber == 0) {
 				dequeueInstQueue(instructionQueue, instructionIndex);
 				instructionNumber--;
@@ -712,14 +721,14 @@ int simulator(char** filesPaths) {
 				break;
 			}
 			if (bussyUnitsNumber > 0) {
-				bussyUnitsNumber += issue(activelUnit, instructionQueue, resTypes, resIndexes, instructionIndex, clockCycles);
+				bussyUnitsNumber += issue(activeUnit, instructionQueue, resTypes, resIndexes, clockCycles);
 			}
 
 		}
-		performCommand(activelUnit, regs, clockCycles, memory, filesArray, instructionQueue, resTypes, resIndexes);
+		performCommand(activeUnit, regs, clockCycles, memory, filesArray, instructionQueue, resTypes, resIndexes);
 	}
 
-	finalize(filesArray, memory, regs, line, cfg, activelUnit, instructionQueue);
+	finalize(filesArray, memory, regs, line, cfg, activeUnit, instructionQueue);
 	return 0;
 }
 
@@ -732,7 +741,7 @@ void performCommand(ActiveUnit* activelUnit, double  regs[16], int clockCycles, 
 	writeToFiles(filesArray[TRACEINST], activelUnit, instructionQueue);
 }
 
-void finalize(FILE* filesArray[6], int  memory[4096], double  regs[16], char* line, Configuration* cfg, ActiveUnit* activelUnit, InstQueue* instructionQueue)
+void finalize(FILE* filesArray[6], int * memory, double * regs, char* line, Configuration* cfg, ActiveUnit* activelUnit, InstQueue* instructionQueue)
 {
 	printUnitsToTraceInstFile(filesArray[TRACEINST]);
 
@@ -740,7 +749,9 @@ void finalize(FILE* filesArray[6], int  memory[4096], double  regs[16], char* li
 
 	printRegoutFile(filesArray[REGOUT], regs);
 
-	freeSimulator(filesArray, line, cfg, 0, activelUnit, instructionQueue);
+	freeSimulator(line);
+	free(regs);
+	free(memory);
 }
 
 int initMemory(FILE* meminFile, char* line, int* memory) {
@@ -1001,13 +1012,12 @@ void writeResultActiveUnit(FILE** file, ActiveUnit* activeUnit, Unit* unit, int*
 	}
 }
 
-void freeSimulator(FILE** file, char* line, Configuration* config, Instruction* inst, ActiveUnit* activeUnit, InstQueue* instQueue) {
+void freeSimulator(char* line) {
 	for (int i = 0; i < FILES_NUMBER; i++) {
-		fclose(file[i]);
+		fclose(filesArray[i]);
 	}
 	if (line) { free(line); }
-	freeInstruction(inst);
-	freeConfiguration(config);
-	freeActiveUnit(activeUnit);
-	freeInstQueue(instQueue);
+	freeConfiguration();
+	freeActiveUnit();
+	freeInstQueue();
 }

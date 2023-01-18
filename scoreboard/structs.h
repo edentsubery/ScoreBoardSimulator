@@ -185,3 +185,10 @@ typedef struct unitNode {
 
 static PrintUnit* head = NULL;
 static PrintUnit* current = NULL;
+static FILE* filesArray[FILES_NUMBER];
+static Configuration* cfg;
+static InstQueue* instructionQueue;
+static ActiveUnit* activeUnit;
+
+static double* regs;
+static int* memory;
