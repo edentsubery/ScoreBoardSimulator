@@ -75,7 +75,7 @@ static const char* configUnitsTypes[2 * UNITS_NUMBER + 1] = { "ld_nr_units", "st
 "ld_delay", "st_delay", "add_delay" , "sub_delay", "mul_delay", "div_delay", "trace_unit" };
 
 
-typedef struct instructionCommand {
+typedef struct {
 	unsigned int opcode;
 	unsigned int dst;
 	unsigned int src0;
@@ -97,7 +97,7 @@ typedef struct instructionCommand {
 	double result;
 }Instruction;
 
-typedef struct instructionQueue {
+typedef struct {
 	Instruction* queue[NUM_OF_INSTRUCTION_QUEUE];
 	int fullQueue;
 	int emptyQueue;
@@ -105,7 +105,7 @@ typedef struct instructionQueue {
 
 
 
-typedef struct unit {
+typedef struct {
 	Instruction* instruction;
 	int type;
 	int unitNum;
@@ -129,25 +129,25 @@ typedef struct unit {
 	int r_k;
 }Unit;
 
-typedef struct units {
+typedef struct {
 	Unit* units[UNITS_NUMBER];
 	int type;
 	int totalUnitsNum;
-	int activeUnitsNum;
+	int functionalUnitsNum;
 	int delay;
 	int canEnter;
 }Units;
 
-typedef struct functionalUnit {
-	Units* activeUnit[UNITS_NUMBER];
+typedef struct {
+	Units* functionalUnit[UNITS_NUMBER];
 	int unitName;
 	int unitNum;
-}ActiveUnit;
+}functionalUnit;
 
 
 typedef intptr_t ssize_t;
 
-typedef struct configParams {
+typedef struct {
 	int units[6];
 	int delays[6];
 	int name;
@@ -181,14 +181,17 @@ typedef struct unitNode {
 	int exeCC;
 	int writeCC;
 	struct unitNode* next;
-}PrintUnit;
+}unitWrapper;
 
-static PrintUnit* head = NULL;
-static PrintUnit* current = NULL;
+static unitWrapper* head = NULL;
+static unitWrapper* current = NULL;
 static FILE* filesArray[FILES_NUMBER];
 static Configuration* cfg;
 static InstQueue* instructionQueue;
-static ActiveUnit* activeUnit;
+static functionalUnit* functionalUnits;
 
 static double* regs;
 static int* memory;
+static int* resTypes;
+static int* resIndexes;
+static char* line;
