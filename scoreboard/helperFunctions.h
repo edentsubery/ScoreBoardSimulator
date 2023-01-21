@@ -4,12 +4,11 @@
 
 Configuration* initConfiguration();
 
-void freeConfiguration(Configuration* cfg);
+void freeConfiguration();
 
-Configuration* analyzeConfiguration(FILE* cfgFd, char* line);
+Configuration* analyzeConfiguration(FILE* cfgFd);
 
-/*Seperate config params by type and execute the right parser function.*/
-int analyzeConfig(Configuration* cfg, char* line);
+int analyzeConfig(Configuration* cfg);
 
 int traceUnitAnalyze(char* ptr, int paramType, char* delimeter, char* unitTraceName);
 
@@ -25,14 +24,13 @@ void analyzeInstruction(Instruction* inst, int command);
 
 InstQueue* initInstQueue();
 
-void freeInstQueue(InstQueue* queue);
+void freeInstQueue();
 
-int enqueueInstQueue(InstQueue* queue, Instruction* inst);
+int insertInstToQueue(Instruction* inst);
 
-int dequeueInstQueue(InstQueue* queue, int instIdx);
+int removeInstAtIdxFromQueue(int instIdx);
 
-/*Check if instruction queue is full.*/
-void emptyFullInstQueue(InstQueue* queue);
+void setQueueFullEmptyAttr();
 
 Unit* initUnit(unitType type, int num);
 
@@ -42,75 +40,86 @@ Units* initUnits(int numOfUnits, int delay, unitType type);
 
 void freeUnits(Units* src);
 
-ActiveUnit* initActiveUnit(Configuration* cfg);
+functionalUnit* initFunctionalUnits(Configuration* config);
 
-void freeActiveUnit(ActiveUnit* src);
+void freeFunctionalUnit();
 
-int openFiles(FILE** filesFd, char** filesPaths);
+int openFiles(char** filesPaths);
 
-void printMemoutFile(FILE* fd, int* memory, int maxLines);
+void printMemoutFile(FILE* fd, int maxLines);
 
-void printRegoutFile(FILE* fd, double* regs);
+void printRegoutFile(FILE* fd);
 
-void printTraceunitFile(FILE* fd, ActiveUnit* fus, int* resultTypes, int* resultIndexes, int cc);
-
-int hexCommand(Instruction* instruction);
+void printTraceunitFile(FILE* fd, int cc);
 
 float singlePrecisionToFloat(unsigned long singlePrecision);
 
 int floatToSinglePrecision(float fl);
 
-int unitsCompare(ActiveUnit* fu, int q_type, int q_index, Unit* src2, int isJ);
+int unitsCompare(int q_type, int q_index, Unit* src2, int isJ);
 
-void writeToFiles(FILE* fd, ActiveUnit* fus, InstQueue* queue);
+void writeToFiles(FILE* fd);
 
 void printUnitsToTraceInstFile(FILE* fd);
 
 void printTracinstFile(FILE* fd, unsigned int opLine, int type, int index, int fetch, int issue, int read, int exe, int write);
 
-PrintUnit* initPrintUnit();
+unitWrapper* initUnitWrapper();
 
-void insertPrintUnit(Unit* unitSrc);
+void insertUnitWrapper(Unit* unitSrc);
 
-PrintUnit* deletePrintUnit();
+unitWrapper* deleteUnitWrapper();
 
-/*Return the length of the linked list.*/
 int length();
+
+void swap(unitWrapper* current, unitWrapper* temp, unitWrapper* next);
 
 void sort();
 
-void updatePrintUnit(PrintUnit* unitSrc, PrintUnit* dst);
+void updateUnitWrapper(unitWrapper* src, unitWrapper* dst);
 
 
-static int bussyUnitsNumber = 0;
+static int busyUnitCnt = 0;
 
-/*Simulator function, execute all simulator steps.*/
+void memoryAllocation();
+
 int simulator(char** filesPaths);
 
-void performCommand(ActiveUnit* functionalUnit, double  regs[16], int cc, int  memory[4096], FILE* filesFd[6], InstQueue* instQueue, int  resultTypes[16], int  resultIndexes[16]);
+int initializeDataStructures(char** filesPaths);
 
-void finalize(FILE* filesFd[6], int  memory[4096], double  regs[16], char* line, Configuration* cfg, ActiveUnit* functionalUnit, InstQueue* instQueue);
+void performCommand(int cc);
 
-int initMemory(FILE* meminFd, char* line, int* memory);
+void printFiles();
 
-void initRegs(double* regs);
+void finalize();
 
-int issue(ActiveUnit* fu, InstQueue* queue, int* resultTypes, int* resultIndexes, int cc);
+int initMemory(FILE* meminFd);
 
-int instructionToUnit(ActiveUnit* fus, Instruction* instruction, int* resultTypes, int* resultIndexes, int cc);
+void initRegs();
 
-void setUnitFields(ActiveUnit* functionalUnits, int type, int i, Instruction* instruction, int* resultIndexes, int* resultTypes, int cc);
+int issue(int cc);
 
-void readOp(ActiveUnit* fu, double* regs, int cc);
+int instructionToUnit(Instruction* instruction, int cc);
 
-void executionOp(ActiveUnit* fu, int* mem, double* regs, int cc);
+void setUnitFields(int type, int i, Instruction* instruction, int cc);
 
-void executionInst(ActiveUnit* fu, int* mem, double* regs, unsigned int instOp, int i, int j, int cc);
+void readOp(int cc);
 
-void writeResult(FILE** fds, ActiveUnit* fu, InstQueue* queue, int* mem, int* resultTypes, int* resultIndexes, double* regs, int cc);
+void executionOp(int cc);
 
-void writeResultActiveUnit(FILE** fds, ActiveUnit* fus, Unit* unit, int* mem, int* resultTypes, int* resultIndexes, double* regs, int cc);
+void executionInst(unsigned int instOp, int i, int j, int cc);
 
-void checkLdSt(ActiveUnit* fu, Instruction* stInst, int cc);
+void writeResult(int cc);
 
-void freeSimulator(char* line);
+void writeResultFunctionalUnit(Unit* unit, int cc);
+
+void checkLdSt(Instruction* stInst, int cc);
+
+void deallocateMemory();
+void ADD(int i, int j);
+void SUB(int i, int j);
+void DIV(int i, int j);
+
+void MULT(int i, int j);
+void ST(int i, int j, int clockCycles);
+void LD(int i, int j);
