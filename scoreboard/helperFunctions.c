@@ -1,5 +1,5 @@
 #include "helperFunctions.h"
-//
+//Create Configuration Data Structure which depicts activity with cfg.txt
 Configuration* initConfiguration() {
 	Configuration* config = (Configuration*)malloc(sizeof(Configuration));
 	if (!config) {
@@ -8,14 +8,14 @@ Configuration* initConfiguration() {
 	config->name = -1;
 	return config;
 }
-//
+//Release Configuration from computer memory
 void freeConfiguration(Configuration* cfg) {
 	if (!cfg) {
 		return;
 	}
 	free(cfg);
 }
-//
+//Recives cfg.txt and line and return an updated Configuration.
 Configuration* analyzeConfiguration(FILE* cfgFile, char* line) {
 	Configuration* config = initConfiguration();
 	if (!config) {
@@ -32,7 +32,7 @@ Configuration* analyzeConfiguration(FILE* cfgFile, char* line) {
 	}
 	return config;
 }
-//
+//Recives Configuration,line and update Configuration properties by line and return 1 in correctly update. 
 int analyzeConfig(Configuration* cfg, char* line) {
 	if (line == '\n') {
 		return 1;
@@ -80,23 +80,23 @@ int analyzeConfig(Configuration* cfg, char* line) {
 	}
 	return 1;
 }
-//
+//Recives pointer, parameter, boundary and returns the number conversion of the parameter text.
 int analyzePar(char* pointer, int parType, char* boundary) {
 	pointer = strtok(NULL, boundary);
 	int num = atoi(pointer);
 	return num;
 }
-//
+//Recives pointer, parameter, boundary, trace_unit name and update the trace_unit name and return 1 in correctly update.
 int traceUnitAnalyze(char* pointer, int parType, char* boundary, char* unitTraceName) {
 	pointer = strtok(NULL, boundary);
 	if (!pointer) {
-		printf("Couldnt analyze traceunit name!\n");
+		printf("Can't analyze traceunit name!\n");
 		return 0;
 	}
 	strcpy(unitTraceName, pointer);
 	return 1;
 }
-//
+//Recives string and returns number in the string or -1 while there isn't.
 int findIntegerInString(char* str) {
 	char* pointer = str;
 	while (*pointer) {
@@ -110,7 +110,7 @@ int findIntegerInString(char* str) {
 	}
 	return -1;
 }
-//3
+//Recives string and returns trace_unit name or -1 while there isn't.
 int findUnitTraceName(char* str) {
 	for (int i = 0; i < UNITS_NUMBER; i++) {
 		if (strcmp(str, unitsTypeNames[i]) == 0) {
@@ -121,7 +121,7 @@ int findUnitTraceName(char* str) {
 }
 
 //inst
-//
+//Create Instruction Data Structure.
 Instruction* initInstruction() {
 	Instruction* inst = malloc(sizeof(Instruction));
 	if (!inst) {
@@ -137,13 +137,13 @@ Instruction* initInstruction() {
 	inst->fetchCycles = 0;
 	return inst;
 }
-//
+//Release Instruction from computer memory.
 void freeInstruction(Instruction* inst) {
 	if (inst) {
 		free(inst);
 	}
 }
-//
+//Recives Instruction,command and update Instruction properties.
 void analyzeInstruction(Instruction* inst, int command) {
 	inst->command = command;
 	inst->opcode = 0xF & ((command << 4) >> 28);
@@ -165,7 +165,7 @@ void analyzeInstruction(Instruction* inst, int command) {
 	}
 }
 
-//
+//Create InstQueue Data Structure.
 InstQueue* initInstQueue() {
 	InstQueue* instQueue = malloc(sizeof(InstQueue));
 	if (!instQueue) {
@@ -187,7 +187,7 @@ InstQueue* initInstQueue() {
 	instQueue->emptyQueue = Yes;
 	return instQueue;
 }
-//
+//Release InstQueue from computer memory.
 void freeInstQueue(InstQueue* instQueue) {
 	if (instQueue) {
 		for (int i = 0; i < NUM_OF_INSTRUCTION_QUEUE; i++) {
@@ -196,7 +196,7 @@ void freeInstQueue(InstQueue* instQueue) {
 		free(instQueue);
 	}
 }
-//
+//Recives InstQueue, Instruction and returns the index of adding the Instruction to InstQueue or -1 while it couldn't.
 int enqueueInstQueue(InstQueue* instQueue, Instruction* inst) {
 	if (inst->operation == -1) {
 		return -1;
@@ -213,7 +213,7 @@ int enqueueInstQueue(InstQueue* instQueue, Instruction* inst) {
 	}
 	return -1;
 }
-//
+//Recives InstQueue, instIndex and returns 1 for removing Instruction from InstQueue or 0 else case.
 int dequeueInstQueue(InstQueue* instQueue, int instIndex) {
 	if (instQueue->emptyQueue) {
 		return 0;
@@ -222,7 +222,7 @@ int dequeueInstQueue(InstQueue* instQueue, int instIndex) {
 	emptyFullInstQueue(instQueue);
 	return 1;
 }
-//
+//Recives InstQueue and update his full, empty properties.
 void emptyFullInstQueue(InstQueue* instQueue) {
 	int instNum = 0;
 	for (int i = 0; i < NUM_OF_INSTRUCTION_QUEUE; i++) {
@@ -246,7 +246,7 @@ void emptyFullInstQueue(InstQueue* instQueue) {
 
 //units
 
-//
+//Create Unit Data Structure.
 Unit* initUnit(unitType type, int num) {
 	Unit* unit = (Unit*)malloc(sizeof(Unit));
 	if (!unit) {
@@ -261,14 +261,14 @@ Unit* initUnit(unitType type, int num) {
 	unit->op = unit->f_i = unit->f_j = unit->f_k = unit->q_j_type = unit->q_k_type = unit->q_j_index = unit->q_k_index = unit->r_j = unit->r_k = -1;
 	return unit;
 }
-//
+//Release Unit from computer memory.
 void freeUnit(Unit* unit) {
 	if (!unit) {
 		return;
 	}
 	free(unit);
 }
-//
+//Create Units Data Structure.
 Units* initUnits(int numOfUnits, int delay, unitType type) {
 	Units* units = malloc(sizeof(Units));
 	if (units == NULL) {
@@ -300,7 +300,7 @@ Units* initUnits(int numOfUnits, int delay, unitType type) {
 	units->canEnter = Yes;
 	return units;
 }
-//
+//Release Units from computer memory.
 void freeUnits(Units* units) {
 	if (units == NULL) {
 		return;
@@ -313,7 +313,7 @@ void freeUnits(Units* units) {
 	}
 	free(units);
 }
-//
+//Create ActiveUnit Data Structure.
 ActiveUnit* initActiveUnit(Configuration* config) {
 	ActiveUnit* activeUnit = (ActiveUnit*)malloc(sizeof(ActiveUnit));
 	if (!activeUnit) {
@@ -334,7 +334,7 @@ ActiveUnit* initActiveUnit(Configuration* config) {
 	activeUnit->unitName = config->name;
 	return activeUnit;
 }
-//
+//Release ActiveUnit from computer memory.
 void freeActiveUnit(ActiveUnit* activeUnit) {
 	if (activeUnit == NULL) {
 		return;
@@ -347,7 +347,7 @@ void freeActiveUnit(ActiveUnit* activeUnit) {
 
 //utilities
 
-//
+//Recives filesArray, filesPaths and returns 1 for opening the files in filesArray, 0 otherwise.
 int openFiles(FILE** filesArray, char** filesPaths) {
 	for (int i = 0; i < FILES_NUMBER; i++) {
 		char* mode = "r";
@@ -366,20 +366,20 @@ int openFiles(FILE** filesArray, char** filesPaths) {
 	}
 	return 1;
 }
-//
+//print Memout File
 void printMemoutFile(FILE* file, int* memory, int maxNumLines) {
 	for (int i = 0; i < maxNumLines; i++) {
 		fprintf(file, "%.8x\n", memory[i]);
 	}
 }
-//
+//print Regout File
 void printRegoutFile(FILE* file, double* regs) {
 	int i;
 	for (i = 0; i < REGISTERS_NUMBER; i++) {
 		fprintf(file, "%f\n", regs[i]);
 	}
 }
-//
+//print Traceunit File
 void printTraceunitFile(FILE* file, ActiveUnit* activeUnit, int* resultTypes, int* resultIndexes, int clockCycle) {
 	int unitBusy = No;
 	for (int i = 0; i < REGISTERS_NUMBER; i++) {
@@ -415,7 +415,7 @@ void printTraceunitFile(FILE* file, ActiveUnit* activeUnit, int* resultTypes, in
 		fprintf(file, (activeUnit->activeUnit[activeUnit->unitName]->units[activeUnit->unitNum]->r_k) ? "Yes\n" : "No\n");
 	}
 }
-//
+//Recives Instruction and returns the hexadecimal command.
 int hexCommand(Instruction* inst) {
 	unsigned int hex = 0;
 	hex += inst->opcode << 24;
@@ -425,7 +425,7 @@ int hexCommand(Instruction* inst) {
 	hex += 0xFFFFF & inst->imm;
 	return hex;
 }
-//
+//Recievs ActiveUnit, q_type, q_index, Unit, j and returns 1 if unit of active unit equals to unit, 0 otherwise.
 int unitsCompare(ActiveUnit* activeUnit, int q_type, int q_index, Unit* unit, int j) {
 	for (int i = 0; i < UNITS_NUMBER; i++) {
 		if (i == q_type) {
@@ -440,7 +440,7 @@ int unitsCompare(ActiveUnit* activeUnit, int q_type, int q_index, Unit* unit, in
 	}
 	return 0;
 }
-//
+//Recives singlePrecision and returns float number.
 float singlePrecisionToFloat(unsigned long singlePrecision) {
 	unsigned long sign, exp, fractionBits, fractionB;
 	int i = 0;
@@ -460,7 +460,7 @@ float singlePrecisionToFloat(unsigned long singlePrecision) {
 
 	return result;
 }
-//
+//Recives float number and returns singlePrecision.
 int floatToSinglePrecision(float f) {
 	int exp, fraction, expLenBits, i = 0, fractionToBit = 0;
 	int floatInInt = (int)floor(f);
@@ -487,7 +487,7 @@ int floatToSinglePrecision(float f) {
 
 	return result;
 }
-//
+//Recives file, activeUnit, instQueue and update data and arrays for printing to files. 
 void writeToFiles(FILE* file, ActiveUnit* activeUnit, InstQueue* instQueue) {
 	for (int i = 0; i < NUM_OF_INSTRUCTION_QUEUE; i++) {
 		if (!instQueue->queue[i]->empty && instQueue->queue[i]->clockCyclesOperation[WRITE_RESULT] > 0) {
@@ -500,7 +500,7 @@ void writeToFiles(FILE* file, ActiveUnit* activeUnit, InstQueue* instQueue) {
 		}
 	}
 }
-//
+//Recives file and print units to TraceInstFile.
 void printUnitsToTraceInstFile(FILE* file) {
 	sort();
 	int listLength = length();
@@ -509,12 +509,12 @@ void printUnitsToTraceInstFile(FILE* file) {
 		deletePrintUnit();
 	}
 }
-//
+//print Tracinst File
 void printTracinstFile(FILE* file, unsigned int opLine, int type, int index, int fetch, int issue, int read, int exe, int write) {
 	fseek(file, 0, SEEK_END);
 	fprintf(file, "%.8x %d %s%d %d %d %d %d\n", opLine, fetch, unitsTypeNames[type], index, issue, read, exe, write);
 }
-//
+//Create PrintUnit Data Structure.
 PrintUnit* initPrintUnit() {
 	PrintUnit* printUnit = (PrintUnit*)malloc(sizeof(PrintUnit));
 	if (!printUnit) {
@@ -522,9 +522,9 @@ PrintUnit* initPrintUnit() {
 	}
 	printUnit->op = printUnit->unitType = printUnit->unitIndex = printUnit->fetchCC = printUnit->issueCC = printUnit->readCC = printUnit->exeCC = printUnit->writeCC = -1;
 	return printUnit;
-}//
+}
+//Recives Unit and insert it into PrintUnit array.
 void insertPrintUnit(Unit* unit) {
-	// create a link
 	PrintUnit* printUnit = malloc(sizeof(PrintUnit));
 	if (printUnit == NULL) {
 		return;
@@ -542,18 +542,18 @@ void insertPrintUnit(Unit* unit) {
 
 	head = printUnit;
 }
-//
+//delete Unit from PrintUnit.
 PrintUnit* deletePrintUnit() {
 
 	PrintUnit* tempLink = head;
 	head = head->next;
 	return tempLink;
 }
-//
+//returns 1 if structure is empty.
 int empty() {
 	return head == NULL;
 }
-//
+//returns PrintUnit array length.
 int length() {
 	int length = 0;
 	PrintUnit* current;
@@ -564,7 +564,7 @@ int length() {
 
 	return length;
 }
-//
+//sorting PrintUnit by fetchCC.
 void sort() {
 
 	int i, j, k, tempKey;
@@ -592,7 +592,7 @@ void sort() {
 		}
 	}
 }
-//
+//recives printUnit Source, printUnit Destenation and update Source to Destenation (copy).
 void updatePrintUnit(PrintUnit* printUnitSource, PrintUnit* printUnitDestenation) {
 	printUnitDestenation->op = printUnitSource->op;
 	printUnitDestenation->unitType = printUnitSource->unitType;
@@ -608,6 +608,7 @@ void updatePrintUnit(PrintUnit* printUnitSource, PrintUnit* printUnitDestenation
 //simulator
 
 int simulator(char** filesPaths) {
+	//initialize and setup
 	FILE* filesArray[FILES_NUMBER];
 	Configuration* cfg;
 	InstQueue* instructionQueue;
@@ -640,7 +641,6 @@ int simulator(char** filesPaths) {
 		resIndexes[i] = -1;
 	}
 	
-
 	instructionQueue = initInstQueue();
 	if (!instructionQueue) {
 		freeSimulator(0, line, 0, 0, 0, 0);
@@ -662,18 +662,18 @@ int simulator(char** filesPaths) {
 		freeSimulator(filesArray, line, cfg, 0, activelUnit, instructionQueue);
 		return 0;
 	}
-
+	// the loop runs over and over till HALT instruction, every loop represents a new clock cycle
 	while (1) {
 		clockCycles++;
 		printTraceunitFile(filesArray[TRACEUNIT], activelUnit, resTypes, resIndexes, clockCycles);
-		Instruction* instruction = initInstruction();
+		Instruction* instruction = initInstruction(); //Read a new instruction from memory 
 		if (!instruction) {
 			freeSimulator(filesArray, line, cfg, instruction, activelUnit, instructionQueue);
 			return 0;
 		}
-		if (!stopSet) {
+		if (!stopSet) { //previous intruction is not HALT
 			analyzeInstruction(instruction, memory[instructionNumber]);
-			if (instruction->opcode == HALT) {
+			if (instruction->opcode == HALT) { //current intruction is HALT
 				stopSet = Yes;
 				runPossible = No;
 				for (int i = 0; i < REGISTERS_NUMBER; i++) {
@@ -682,7 +682,7 @@ int simulator(char** filesPaths) {
 					}
 				}
 			}
-			instructionIndex = enqueueInstQueue(instructionQueue, instruction);
+			instructionIndex = enqueueInstQueue(instructionQueue, instruction); //inserting instruction into the instruction queue
 			if (instructionIndex != -1) {
 				instructionNumber++;
 				instruction->fetchCycles = clockCycles;
@@ -690,7 +690,7 @@ int simulator(char** filesPaths) {
 			if (clockCycles == 0) {
 				continue;
 			}
-			tempBussyInstructionsNumber = issue(activelUnit, instructionQueue, resTypes, resIndexes, clockCycles);
+			tempBussyInstructionsNumber = issue(activelUnit, instructionQueue, resTypes, resIndexes, clockCycles); //try to issue an instruction from the instruction queue
 			if (tempBussyInstructionsNumber == 0) {
 				dequeueInstQueue(instructionQueue, instructionIndex);
 				instructionNumber--;
@@ -700,7 +700,7 @@ int simulator(char** filesPaths) {
 				bussyUnitsNumber += tempBussyInstructionsNumber;
 			}
 		}
-		else {
+		else { //HALT instruction
 			runPossible = No;
 			for (int i = 0; i < REGISTERS_NUMBER; i++) {
 				if (resTypes[i] != -1) {
@@ -716,13 +716,13 @@ int simulator(char** filesPaths) {
 			}
 
 		}
-		performCommand(activelUnit, regs, clockCycles, memory, filesArray, instructionQueue, resTypes, resIndexes);
+		performCommand(activelUnit, regs, clockCycles, memory, filesArray, instructionQueue, resTypes, resIndexes); //execution of the instructions.
 	}
 
-	finalize(filesArray, memory, regs, line, cfg, activelUnit, instructionQueue);
+	finalize(filesArray, memory, regs, line, cfg, activelUnit, instructionQueue); //write all the output files and free all the allocated memory.
 	return 0;
 }
-
+//Recieves activelUnit, regs, clockCycles, memory, filesArray, instructionQueue, resTypes, resIndexes and perform command.
 void performCommand(ActiveUnit* activelUnit, double  regs[16], int clockCycles, int  memory[4096], FILE* filesArray[6], InstQueue* instructionQueue, int  resTypes[16], int  resIndexes[16])
 {
 	readOp(activelUnit, regs, clockCycles);
@@ -731,7 +731,7 @@ void performCommand(ActiveUnit* activelUnit, double  regs[16], int clockCycles, 
 
 	writeToFiles(filesArray[TRACEINST], activelUnit, instructionQueue);
 }
-
+//Recives filesArray, memory, regs, line, cfg, activelUnit, instructionQueue and printing to files and release memory.
 void finalize(FILE* filesArray[6], int  memory[4096], double  regs[16], char* line, Configuration* cfg, ActiveUnit* activelUnit, InstQueue* instructionQueue)
 {
 	printUnitsToTraceInstFile(filesArray[TRACEINST]);
@@ -742,7 +742,7 @@ void finalize(FILE* filesArray[6], int  memory[4096], double  regs[16], char* li
 
 	freeSimulator(filesArray, line, cfg, 0, activelUnit, instructionQueue);
 }
-
+//Recievs meminFile, line, memory and returns the amount of content lines in memory.
 int initMemory(FILE* meminFile, char* line, int* memory) {
 	int linesNumber = 0;
 	int endLine = 0;
@@ -761,13 +761,13 @@ int initMemory(FILE* meminFile, char* line, int* memory) {
 	}
 	return endLine;
 }
-
+//Recievs registers and initialize it.
 void initRegs(double* registers) {
 	for (int i = 0; i < REGISTERS_NUMBER; i++) {
 		registers[i] = i / 1.0;
 	}
 }
-
+//Recievs activeUnit, InstQueue, resTypes, resIndexes,clockCycles and returns 1 for issue, 0 otherwise.
 int issue(ActiveUnit* activeUnit, InstQueue* queue, int* resTypes, int* resIndexes, int clockCycles) {
 	int instUnitIndex = -1;
 	for (int i = 0; i < NUM_OF_INSTRUCTION_QUEUE; i++) {
@@ -778,13 +778,13 @@ int issue(ActiveUnit* activeUnit, InstQueue* queue, int* resTypes, int* resIndex
 	}
 	return 0;
 }
-
+//Recives activeUnit, instruction, resTypes, resIndexes, clockCycles and returns 1 for entring instruction to active unit, and 0 otherwise.
 int instructionToUnit(ActiveUnit* activeUnit, Instruction* instruction, int* resTypes, int* resIndexes, int clockCycles) {
 	if (!instruction || instruction->empty == Yes) {
 		return 0;
 	}
 	int type = instruction->operation;
-	/*Halt instruction*/
+	//Halt instruction
 	if (type < 0 || type > 5) {
 		return 0;
 	}
@@ -802,7 +802,7 @@ int instructionToUnit(ActiveUnit* activeUnit, Instruction* instruction, int* res
 	}
 	return 0;
 }
-
+//Recievs activeUnit, type, i, instruction, resIndexes, resTypes, clockCycles and update units properties.
 void setUnitFields(ActiveUnit* activeUnit, int type, int i, Instruction* instruction, int* resIndexes, int* resTypes, int clockCycles)
 {
 	activeUnit->activeUnit[type]->units[i]->busy = Yes;
@@ -837,7 +837,7 @@ void setUnitFields(ActiveUnit* activeUnit, int type, int i, Instruction* instruc
 
 	activeUnit->activeUnit[type]->units[i]->instruction->index = i;
 }
-
+//recievs activeUnit, registers, clockCycles and update units properties in reading command.
 void readOp(ActiveUnit* activeUnit, double* registers, int clockCycles) {
 	for (int i = 0; i < UNITS_NUMBER; i++) {
 		for (int j = 0; j < activeUnit->activeUnit[i]->totalUnitsNum; j++) {
@@ -864,7 +864,7 @@ void readOp(ActiveUnit* activeUnit, double* registers, int clockCycles) {
 		}
 	}
 }
-
+//Recievs activeUnit, memory, registers, clockCycles and update active unit in execution.
 void executionOp(ActiveUnit* activeUnit, int* memory, double* registers, int clockCycles) {
 	for (int i = 0; i < UNITS_NUMBER; i++) {
 		for (int j = 0; j < activeUnit->activeUnit[i]->totalUnitsNum; j++) {
@@ -885,7 +885,7 @@ void executionOp(ActiveUnit* activeUnit, int* memory, double* registers, int clo
 		}
 	}
 }
-
+//Recievs activeUnit, memory, registers, opcode, i, j, clockCycles and execute instruction.
 void executionInst(ActiveUnit* activeUnit, int* memory, double* registers, unsigned int opcode, int i, int j, int clockCycles) {
 	switch (opcode) {
 	case OP_ADD:
@@ -909,7 +909,7 @@ void executionInst(ActiveUnit* activeUnit, int* memory, double* registers, unsig
 		break;
 	}
 }
-
+//Recievs activeUnit, Instruction, clockCycles and check LD/ST hit.
 void checkLdSt(ActiveUnit* activeUnit, Instruction* stInst, int clockCycles) {
 	for (int i = 0; i < activeUnit->activeUnit[LD_UNIT]->totalUnitsNum; i++) {
 		if (!activeUnit->activeUnit[LD_UNIT]->units[i]->empty) {
@@ -924,7 +924,7 @@ void checkLdSt(ActiveUnit* activeUnit, Instruction* stInst, int clockCycles) {
 		}
 	}
 }
-
+//Recievs file, activeUnit, instQueue, memory, resTypes, resIndexes, registers, clockCycles and update results.
 void writeResult(FILE** file, ActiveUnit* activeUnit, InstQueue* instQueue, int* memory, int* resTypes, int* resIndexes, double* registers, int clockCycles) {
 	int writeResultTypes = 0, unitsNum;
 	for (int x = 0; x < UNITS_NUMBER; x++) {
@@ -937,7 +937,7 @@ void writeResult(FILE** file, ActiveUnit* activeUnit, InstQueue* instQueue, int*
 		}
 	}
 }
-
+//Recievs file, activeUnit, unit, memory, resTypes, resIndexes, registers, clockCycles and update results of activeUnit.
 void writeResultActiveUnit(FILE** file, ActiveUnit* activeUnit, Unit* unit, int* memory, int* resTypes, int* resIndexes, double* registers, int clockCycles) {
 	int writeResultTypes = 0;
 	if (!unit->writeResult) {
@@ -1000,7 +1000,7 @@ void writeResultActiveUnit(FILE** file, ActiveUnit* activeUnit, Unit* unit, int*
 		}
 	}
 }
-
+//Release simulator memory.
 void freeSimulator(FILE** file, char* line, Configuration* config, Instruction* inst, ActiveUnit* activeUnit, InstQueue* instQueue) {
 	for (int i = 0; i < FILES_NUMBER; i++) {
 		fclose(file[i]);
